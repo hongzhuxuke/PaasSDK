@@ -1,0 +1,67 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2037
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VHPaasSDK", "VHPaasSDK.vcxproj", "{BF16A66B-B9C8-457D-9E21-28287E1DD805}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VhallWebRtcSDK", "VhallWebRtcSDK\VhallWebRtcSDK.vcxproj", "{0B22995B-9C3A-40EB-81E1-60514923EBAE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vhall_webrtc_sdk", "VhallWebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\vhall_webrtc_sdk.vcxproj", "{7326DB85-E7BC-4620-A49E-E93630E6D573}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "socket_io", "VhallWebSocket\socket_io\socket_io.vcxproj", "{911A49D5-AA1E-4C03-A2CD-0036D680450F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VHWebSocket", "VhallWebSocket\VHWebSocket\VHWebSocket.vcxproj", "{17AE0654-B5FC-4AB1-98C7-8C114DD5F6F6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BF16A66B-B9C8-457D-9E21-28287E1DD805}.Debug|x64.ActiveCfg = Debug|Win32
+		{BF16A66B-B9C8-457D-9E21-28287E1DD805}.Debug|x86.ActiveCfg = Debug|Win32
+		{BF16A66B-B9C8-457D-9E21-28287E1DD805}.Debug|x86.Build.0 = Debug|Win32
+		{BF16A66B-B9C8-457D-9E21-28287E1DD805}.Release|x64.ActiveCfg = Release|Win32
+		{BF16A66B-B9C8-457D-9E21-28287E1DD805}.Release|x86.ActiveCfg = Release|Win32
+		{BF16A66B-B9C8-457D-9E21-28287E1DD805}.Release|x86.Build.0 = Release|Win32
+		{0B22995B-9C3A-40EB-81E1-60514923EBAE}.Debug|x64.ActiveCfg = Debug|x64
+		{0B22995B-9C3A-40EB-81E1-60514923EBAE}.Debug|x64.Build.0 = Debug|x64
+		{0B22995B-9C3A-40EB-81E1-60514923EBAE}.Debug|x86.ActiveCfg = Debug|Win32
+		{0B22995B-9C3A-40EB-81E1-60514923EBAE}.Debug|x86.Build.0 = Debug|Win32
+		{0B22995B-9C3A-40EB-81E1-60514923EBAE}.Release|x64.ActiveCfg = Release|x64
+		{0B22995B-9C3A-40EB-81E1-60514923EBAE}.Release|x64.Build.0 = Release|x64
+		{0B22995B-9C3A-40EB-81E1-60514923EBAE}.Release|x86.ActiveCfg = Release|Win32
+		{0B22995B-9C3A-40EB-81E1-60514923EBAE}.Release|x86.Build.0 = Release|Win32
+		{7326DB85-E7BC-4620-A49E-E93630E6D573}.Debug|x64.ActiveCfg = Debug|x64
+		{7326DB85-E7BC-4620-A49E-E93630E6D573}.Debug|x64.Build.0 = Debug|x64
+		{7326DB85-E7BC-4620-A49E-E93630E6D573}.Debug|x86.ActiveCfg = Debug|Win32
+		{7326DB85-E7BC-4620-A49E-E93630E6D573}.Debug|x86.Build.0 = Debug|Win32
+		{7326DB85-E7BC-4620-A49E-E93630E6D573}.Release|x64.ActiveCfg = Release|x64
+		{7326DB85-E7BC-4620-A49E-E93630E6D573}.Release|x64.Build.0 = Release|x64
+		{7326DB85-E7BC-4620-A49E-E93630E6D573}.Release|x86.ActiveCfg = Release|Win32
+		{7326DB85-E7BC-4620-A49E-E93630E6D573}.Release|x86.Build.0 = Release|Win32
+		{911A49D5-AA1E-4C03-A2CD-0036D680450F}.Debug|x64.ActiveCfg = Debug|Win32
+		{911A49D5-AA1E-4C03-A2CD-0036D680450F}.Debug|x86.ActiveCfg = Debug|Win32
+		{911A49D5-AA1E-4C03-A2CD-0036D680450F}.Debug|x86.Build.0 = Debug|Win32
+		{911A49D5-AA1E-4C03-A2CD-0036D680450F}.Release|x64.ActiveCfg = Release|Win32
+		{911A49D5-AA1E-4C03-A2CD-0036D680450F}.Release|x86.ActiveCfg = Release|Win32
+		{911A49D5-AA1E-4C03-A2CD-0036D680450F}.Release|x86.Build.0 = Release|Win32
+		{17AE0654-B5FC-4AB1-98C7-8C114DD5F6F6}.Debug|x64.ActiveCfg = Debug|x64
+		{17AE0654-B5FC-4AB1-98C7-8C114DD5F6F6}.Debug|x64.Build.0 = Debug|x64
+		{17AE0654-B5FC-4AB1-98C7-8C114DD5F6F6}.Debug|x86.ActiveCfg = Debug|Win32
+		{17AE0654-B5FC-4AB1-98C7-8C114DD5F6F6}.Debug|x86.Build.0 = Debug|Win32
+		{17AE0654-B5FC-4AB1-98C7-8C114DD5F6F6}.Release|x64.ActiveCfg = Release|x64
+		{17AE0654-B5FC-4AB1-98C7-8C114DD5F6F6}.Release|x64.Build.0 = Release|x64
+		{17AE0654-B5FC-4AB1-98C7-8C114DD5F6F6}.Release|x86.ActiveCfg = Release|Win32
+		{17AE0654-B5FC-4AB1-98C7-8C114DD5F6F6}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {134E7225-F43B-4BD6-8D73-9A813B66359D}
+	EndGlobalSection
+EndGlobal
