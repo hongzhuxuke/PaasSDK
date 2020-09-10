@@ -1,0 +1,202 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3957E89F-B61C-4C74-9CA6-73A733304211}</ProjectGuid>
+    <Keyword>Qt4VSv1.0</Keyword>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(QtMsBuild)'=='' or !Exists('$(QtMsBuild)\qt.targets')">
+    <QtMsBuild>$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
+    <Import Project="$(QtMsBuild)\qt.props" />
+  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;VHALLNETWORK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);%(AdditionalIncludeDirectories);$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\include;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\include;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\include;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\include;$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\include</AdditionalIncludeDirectories>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>$(OutDir)\$(ProjectName).dll</OutputFile>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\lib;$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\lib;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\lib;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\lib;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\lib</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libcurl_a.lib;libssh2_a_debug.lib;libssh2_debug.lib;nghttp2_debug.lib;libcrypto.lib;libssl.lib;zlib_a.lib;Ws2_32.lib;Wldap32.lib;winmm.lib;Crypt32.lib;Normaliz.lib;User32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <QtMoc>
+      <Define>UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;VHALLNETWORK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</Define>
+      <IncludePath>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);%(AdditionalIncludeDirectories);$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\include;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\include;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\include;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\include;$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\include</IncludePath>
+      <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+    </QtMoc>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;VHALLNETWORK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x64\include;$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x64\include;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x64\include;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x64\include;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x64\include</AdditionalIncludeDirectories>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>$(OutDir)\$(ProjectName).dll</OutputFile>
+      <AdditionalLibraryDirectories>$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x64\lib;$(ProjectDir)3rdParty\libssh2-1.9.0-vc15-x64\lib;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x64\lib;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x64\lib\Debug;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x64\lib</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libcurl_a.lib;libssh2_a_debug.lib;libssh2_debug.lib;nghttp2_debug.lib;libcrypto64MDd.lib;libssl64MDd.lib;zlib_a.lib;Ws2_32.lib;Wldap32.lib;winmm.lib;Crypt32.lib;Normaliz.lib;User32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <QtMoc>
+      <Define>UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;VHALLNETWORK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</Define>
+      <IncludePath>$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x64\include;$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x64\include;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x64\include;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x64\include;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x64\include</IncludePath>
+      <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+    </QtMoc>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;VHALLNETWORK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);%(AdditionalIncludeDirectories);$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\include;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\include;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\include;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\include;$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\include</AdditionalIncludeDirectories>
+      <DebugInformationFormat />
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>$(OutDir)\$(ProjectName).dll</OutputFile>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)$(QTDIR)\lib;$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\lib;$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\lib;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\lib;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\lib;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\lib</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libcurl_a.lib;libssh2_a.lib;libssh2.lib;nghttp2.lib;libcrypto.lib;libssl.lib;zlib_a.lib;Ws2_32.lib;Wldap32.lib;winmm.lib;Crypt32.lib;Normaliz.lib;User32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <QtMoc>
+      <Define>UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;VHALLNETWORK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</Define>
+      <IncludePath>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);%(AdditionalIncludeDirectories);$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\include;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\include;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\include;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\include;$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\include</IncludePath>
+      <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+    </QtMoc>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;VHALLNETWORK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);%(AdditionalIncludeDirectories);$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\include;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\include;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\include;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\include;$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\include</AdditionalIncludeDirectories>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>$(OutDir)\$(ProjectName).dll</OutputFile>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)$(QTDIR)\lib;$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\lib;$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\lib;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\lib;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\lib;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\lib</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libcurl_a.lib;libssh2_a.lib;libssh2.lib;nghttp2.lib;libcrypto.lib;libssl.lib;zlib_a.lib;Ws2_32.lib;Wldap32.lib;winmm.lib;Crypt32.lib;Normaliz.lib;User32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <QtMoc>
+      <Define>UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;VHALLNETWORK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</Define>
+      <IncludePath>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);%(AdditionalIncludeDirectories);$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\include;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\include;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\include;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\include;$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\include</IncludePath>
+      <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+    </QtMoc>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="live_sys.cpp" />
+    <ClCompile Include="VhallNetWork.cpp" />
+    <ClCompile Include="vhall_log.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="live_sys.h" />
+    <ClInclude Include="VhallNetWork.h" />
+    <ClInclude Include="VhallNetWorkInterface.h" />
+    <ClInclude Include="vhallnetwork_global.h" />
+    <ClInclude Include="vhall_log.h" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
+    <Import Project="$(QtMsBuild)\qt.targets" />
+  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties MocDir=".\GeneratedFiles\$(ConfigurationName)" UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" lupdateOptions="" lupdateOnBuild="0" lreleaseOptions="" Qt5Version_x0020_Win32="Qt5" Qt5Version_x0020_x64="X64" MocOptions="" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
