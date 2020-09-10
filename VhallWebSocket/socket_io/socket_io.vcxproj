@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{911A49D5-AA1E-4C03-A2CD-0036D680450F}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>socketio</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)socket.io-client-cpp\lib\rapidjson\include;$(ProjectDir)socket.io-client-cpp\lib\websocketpp;$(ProjectDir)boost_1_68_vs2017\include\boost-1_68;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>libboost_atomic-vc141-mt-gd-x32-1_68.lib;libboost_chrono-vc141-mt-gd-x32-1_68.lib;libboost_container-vc141-mt-gd-x32-1_68.lib;libboost_context-vc141-mt-gd-x32-1_68.lib;libboost_coroutine-vc141-mt-gd-x32-1_68.lib;libboost_date_time-vc141-mt-gd-x32-1_68.lib;libboost_exception-vc141-mt-gd-x32-1_68.lib;libboost_fiber-vc141-mt-gd-x32-1_68.lib;libboost_filesystem-vc141-mt-gd-x32-1_68.lib;libboost_graph-vc141-mt-gd-x32-1_68.lib;libboost_iostreams-vc141-mt-gd-x32-1_68.lib;libboost_locale-vc141-mt-gd-x32-1_68.lib;libboost_log-vc141-mt-gd-x32-1_68.lib;libboost_log_setup-vc141-mt-gd-x32-1_68.lib;libboost_math_c99-vc141-mt-gd-x32-1_68.lib;libboost_math_c99f-vc141-mt-gd-x32-1_68.lib;libboost_math_c99l-vc141-mt-gd-x32-1_68.lib;libboost_math_tr1-vc141-mt-gd-x32-1_68.lib;libboost_math_tr1f-vc141-mt-gd-x32-1_68.lib;libboost_math_tr1l-vc141-mt-gd-x32-1_68.lib;libboost_prg_exec_monitor-vc141-mt-gd-x32-1_68.lib;libboost_program_options-vc141-mt-gd-x32-1_68.lib;libboost_random-vc141-mt-gd-x32-1_68.lib;libboost_regex-vc141-mt-gd-x32-1_68.lib;libboost_serialization-vc141-mt-gd-x32-1_68.lib;libboost_signals-vc141-mt-gd-x32-1_68.lib;libboost_stacktrace_noop-vc141-mt-gd-x32-1_68.lib;libboost_stacktrace_windbg-vc141-mt-gd-x32-1_68.lib;libboost_stacktrace_windbg_cached-vc141-mt-gd-x32-1_68.lib;libboost_system-vc141-mt-gd-x32-1_68.lib;libboost_test_exec_monitor-vc141-mt-gd-x32-1_68.lib;libboost_thread-vc141-mt-gd-x32-1_68.lib;libboost_timer-vc141-mt-gd-x32-1_68.lib;libboost_type_erasure-vc141-mt-gd-x32-1_68.lib;libboost_unit_test_framework-vc141-mt-gd-x32-1_68.lib;libboost_wave-vc141-mt-gd-x32-1_68.lib;libboost_wserialization-vc141-mt-gd-x32-1_68.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>$(ProjectDir)boost_1_68_vs2017\lib\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)socket.io-client-cpp\lib\rapidjson\include;$(ProjectDir)socket.io-client-cpp\lib\websocketpp;$(ProjectDir)boost_1_68_vs2017_x64\include\boost-1_68;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>libboost_atomic-vc141-mt-gd-x64-1_68.lib;libboost_chrono-vc141-mt-gd-x64-1_68.lib;libboost_container-vc141-mt-gd-x64-1_68.lib;libboost_context-vc141-mt-gd-x64-1_68.lib;libboost_coroutine-vc141-mt-gd-x64-1_68.lib;libboost_date_time-vc141-mt-gd-x64-1_68.lib;libboost_exception-vc141-mt-gd-x64-1_68.lib;libboost_fiber-vc141-mt-gd-x64-1_68.lib;libboost_filesystem-vc141-mt-gd-x64-1_68.lib;libboost_graph-vc141-mt-gd-x64-1_68.lib;libboost_iostreams-vc141-mt-gd-x64-1_68.lib;libboost_locale-vc141-mt-gd-x64-1_68.lib;libboost_log-vc141-mt-gd-x64-1_68.lib;libboost_log_setup-vc141-mt-gd-x64-1_68.lib;libboost_math_c99-vc141-mt-gd-x64-1_68.lib;libboost_math_c99f-vc141-mt-gd-x64-1_68.lib;libboost_math_c99l-vc141-mt-gd-x64-1_68.lib;libboost_math_tr1-vc141-mt-gd-x64-1_68.lib;libboost_math_tr1f-vc141-mt-gd-x64-1_68.lib;libboost_math_tr1l-vc141-mt-gd-x64-1_68.lib;libboost_prg_exec_monitor-vc141-mt-gd-x64-1_68.lib;libboost_program_options-vc141-mt-gd-x64-1_68.lib;libboost_random-vc141-mt-gd-x64-1_68.lib;libboost_regex-vc141-mt-gd-x64-1_68.lib;libboost_serialization-vc141-mt-gd-x64-1_68.lib;libboost_signals-vc141-mt-gd-x64-1_68.lib;libboost_stacktrace_noop-vc141-mt-gd-x64-1_68.lib;libboost_stacktrace_windbg-vc141-mt-gd-x64-1_68.lib;libboost_stacktrace_windbg_cached-vc141-mt-gd-x64-1_68.lib;libboost_system-vc141-mt-gd-x64-1_68.lib;libboost_test_exec_monitor-vc141-mt-gd-x64-1_68.lib;libboost_thread-vc141-mt-gd-x64-1_68.lib;libboost_timer-vc141-mt-gd-x64-1_68.lib;libboost_type_erasure-vc141-mt-gd-x64-1_68.lib;libboost_unit_test_framework-vc141-mt-gd-x64-1_68.lib;libboost_wave-vc141-mt-gd-x64-1_68.lib;libboost_wserialization-vc141-mt-gd-x64-1_68.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)boost_1_68_vs2017_x64\lib\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)socket.io-client-cpp\lib\rapidjson\include;$(ProjectDir)socket.io-client-cpp\lib\websocketpp;$(ProjectDir)boost_1_68_vs2017\include\boost-1_68;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>libboost_atomic-vc141-mt-x32-1_68.lib;libboost_chrono-vc141-mt-x32-1_68.lib;libboost_container-vc141-mt-x32-1_68.lib;libboost_context-vc141-mt-x32-1_68.lib;libboost_coroutine-vc141-mt-x32-1_68.lib;libboost_date_time-vc141-mt-x32-1_68.lib;libboost_exception-vc141-mt-x32-1_68.lib;libboost_fiber-vc141-mt-x32-1_68.lib;libboost_filesystem-vc141-mt-x32-1_68.lib;libboost_graph-vc141-mt-x32-1_68.lib;libboost_iostreams-vc141-mt-x32-1_68.lib;libboost_locale-vc141-mt-x32-1_68.lib;libboost_log-vc141-mt-x32-1_68.lib;libboost_log_setup-vc141-mt-x32-1_68.lib;libboost_math_c99-vc141-mt-x32-1_68.lib;libboost_math_c99f-vc141-mt-x32-1_68.lib;libboost_math_c99l-vc141-mt-x32-1_68.lib;libboost_math_tr1-vc141-mt-x32-1_68.lib;libboost_math_tr1f-vc141-mt-x32-1_68.lib;libboost_math_tr1l-vc141-mt-x32-1_68.lib;libboost_prg_exec_monitor-vc141-mt-x32-1_68.lib;libboost_program_options-vc141-mt-x32-1_68.lib;libboost_random-vc141-mt-x32-1_68.lib;libboost_regex-vc141-mt-x32-1_68.lib;libboost_serialization-vc141-mt-x32-1_68.lib;libboost_signals-vc141-mt-x32-1_68.lib;libboost_stacktrace_noop-vc141-mt-x32-1_68.lib;libboost_stacktrace_windbg-vc141-mt-x32-1_68.lib;libboost_stacktrace_windbg_cached-vc141-mt-x32-1_68.lib;libboost_system-vc141-mt-x32-1_68.lib;libboost_test_exec_monitor-vc141-mt-x32-1_68.lib;libboost_thread-vc141-mt-x32-1_68.lib;libboost_timer-vc141-mt-x32-1_68.lib;libboost_type_erasure-vc141-mt-x32-1_68.lib;libboost_unit_test_framework-vc141-mt-x32-1_68.lib;libboost_wave-vc141-mt-x32-1_68.lib;libboost_wserialization-vc141-mt-x32-1_68.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)boost_1_68_vs2017\lib\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)socket.io-client-cpp\lib\rapidjson\include;$(ProjectDir)socket.io-client-cpp\lib\websocketpp;$(ProjectDir)boost_1_68_vs2017_x64\include\boost-1_68;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>libboost_atomic-vc141-mt-x64-1_68.lib;libboost_chrono-vc141-mt-x64-1_68.lib;libboost_container-vc141-mt-x64-1_68.lib;libboost_context-vc141-mt-x64-1_68.lib;libboost_coroutine-vc141-mt-x64-1_68.lib;libboost_date_time-vc141-mt-x64-1_68.lib;libboost_exception-vc141-mt-x64-1_68.lib;libboost_fiber-vc141-mt-x64-1_68.lib;libboost_filesystem-vc141-mt-x64-1_68.lib;libboost_graph-vc141-mt-x64-1_68.lib;libboost_iostreams-vc141-mt-x64-1_68.lib;libboost_locale-vc141-mt-x64-1_68.lib;libboost_log-vc141-mt-x64-1_68.lib;libboost_log_setup-vc141-mt-x64-1_68.lib;libboost_math_c99-vc141-mt-x64-1_68.lib;libboost_math_c99f-vc141-mt-x64-1_68.lib;libboost_math_c99l-vc141-mt-x64-1_68.lib;libboost_math_tr1-vc141-mt-x64-1_68.lib;libboost_math_tr1f-vc141-mt-x64-1_68.lib;libboost_math_tr1l-vc141-mt-x64-1_68.lib;libboost_prg_exec_monitor-vc141-mt-x64-1_68.lib;libboost_program_options-vc141-mt-x64-1_68.lib;libboost_random-vc141-mt-x64-1_68.lib;libboost_regex-vc141-mt-x64-1_68.lib;libboost_serialization-vc141-mt-x64-1_68.lib;libboost_signals-vc141-mt-x64-1_68.lib;libboost_stacktrace_noop-vc141-mt-x64-1_68.lib;libboost_stacktrace_windbg-vc141-mt-x64-1_68.lib;libboost_stacktrace_windbg_cached-vc141-mt-x64-1_68.lib;libboost_system-vc141-mt-x64-1_68.lib;libboost_test_exec_monitor-vc141-mt-x64-1_68.lib;libboost_thread-vc141-mt-x64-1_68.lib;libboost_timer-vc141-mt-x64-1_68.lib;libboost_type_erasure-vc141-mt-x64-1_68.lib;libboost_unit_test_framework-vc141-mt-x64-1_68.lib;libboost_wave-vc141-mt-x64-1_68.lib;libboost_wserialization-vc141-mt-x64-1_68.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)boost_1_68_vs2017_x64\lib\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="socket.io-client-cpp\src\internal\sio_client_impl.h" />
+    <ClInclude Include="socket.io-client-cpp\src\internal\sio_packet.h" />
+    <ClInclude Include="socket.io-client-cpp\src\sio_client.h" />
+    <ClInclude Include="socket.io-client-cpp\src\sio_message.h" />
+    <ClInclude Include="socket.io-client-cpp\src\sio_socket.h" />
+    <ClInclude Include="socket_io.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="socket.io-client-cpp\src\internal\sio_client_impl.cpp" />
+    <ClCompile Include="socket.io-client-cpp\src\internal\sio_packet.cpp" />
+    <ClCompile Include="socket.io-client-cpp\src\sio_client.cpp" />
+    <ClCompile Include="socket.io-client-cpp\src\sio_socket.cpp" />
+    <ClCompile Include="socket_io.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="socket.io-client-cpp\src\internal\.DS_Store" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

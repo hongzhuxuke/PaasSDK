@@ -1,0 +1,292 @@
+cmake_minimum_required(VERSION 3.15)
+project(socket_io_client_cpp)
+
+set(CMAKE_CXX_STANDARD 14)
+
+include_directories(examples/iOS/SioChatDemo/SioChatDemo)
+include_directories(examples/QT/SioChatDemo)
+include_directories(lib/rapidjson/include)
+include_directories(lib/rapidjson/include/rapidjson)
+include_directories(lib/rapidjson/include/rapidjson/error)
+include_directories(lib/rapidjson/include/rapidjson/internal)
+include_directories(lib/rapidjson/include/rapidjson/msinttypes)
+include_directories(lib/rapidjson/test/perftest)
+include_directories(lib/rapidjson/test/unittest)
+include_directories(lib/websocketpp/examples/echo_server)
+include_directories(lib/websocketpp/examples/external_io_service)
+include_directories(lib/websocketpp/test/connection)
+include_directories(lib/websocketpp/websocketpp)
+include_directories(lib/websocketpp/websocketpp/base64)
+include_directories(lib/websocketpp/websocketpp/common)
+include_directories(lib/websocketpp/websocketpp/concurrency)
+include_directories(lib/websocketpp/websocketpp/config)
+include_directories(lib/websocketpp/websocketpp/extensions)
+include_directories(lib/websocketpp/websocketpp/extensions/permessage_deflate)
+include_directories(lib/websocketpp/websocketpp/http)
+include_directories(lib/websocketpp/websocketpp/http/impl)
+include_directories(lib/websocketpp/websocketpp/impl)
+include_directories(lib/websocketpp/websocketpp/logger)
+include_directories(lib/websocketpp/websocketpp/message_buffer)
+include_directories(lib/websocketpp/websocketpp/processors)
+include_directories(lib/websocketpp/websocketpp/random)
+include_directories(lib/websocketpp/websocketpp/roles)
+include_directories(lib/websocketpp/websocketpp/sha1)
+include_directories(lib/websocketpp/websocketpp/transport)
+include_directories(lib/websocketpp/websocketpp/transport/asio)
+include_directories(lib/websocketpp/websocketpp/transport/asio/security)
+include_directories(lib/websocketpp/websocketpp/transport/base)
+include_directories(lib/websocketpp/websocketpp/transport/debug)
+include_directories(lib/websocketpp/websocketpp/transport/iostream)
+include_directories(lib/websocketpp/websocketpp/transport/stub)
+include_directories(src)
+include_directories(src/internal)
+include_directories(test)
+
+add_executable(socket_io_client_cpp
+        examples/Console/main.cpp
+        examples/iOS/SioChatDemo/SioChatDemo/AppDelegate.h
+        examples/iOS/SioChatDemo/SioChatDemo/AppDelegate.m
+        examples/iOS/SioChatDemo/SioChatDemo/CRViewController.h
+        examples/iOS/SioChatDemo/SioChatDemo/CRViewController.mm
+        examples/iOS/SioChatDemo/SioChatDemo/main.m
+        examples/iOS/SioChatDemo/SioChatDemoTests/SioChatDemoTests.m
+        examples/QT/SioChatDemo/main.cpp
+        examples/QT/SioChatDemo/mainwindow.cpp
+        examples/QT/SioChatDemo/mainwindow.h
+        examples/QT/SioChatDemo/nicknamedialog.cpp
+        examples/QT/SioChatDemo/nicknamedialog.h
+        lib/rapidjson/example/capitalize/capitalize.cpp
+        lib/rapidjson/example/condense/condense.cpp
+        lib/rapidjson/example/messagereader/messagereader.cpp
+        lib/rapidjson/example/pretty/pretty.cpp
+        lib/rapidjson/example/prettyauto/prettyauto.cpp
+        lib/rapidjson/example/serialize/serialize.cpp
+        lib/rapidjson/example/simpledom/simpledom.cpp
+        lib/rapidjson/example/simplereader/simplereader.cpp
+        lib/rapidjson/example/simplewriter/simplewriter.cpp
+        lib/rapidjson/example/tutorial/tutorial.cpp
+        lib/rapidjson/include/rapidjson/error/en.h
+        lib/rapidjson/include/rapidjson/error/error.h
+        lib/rapidjson/include/rapidjson/internal/biginteger.h
+        lib/rapidjson/include/rapidjson/internal/diyfp.h
+        lib/rapidjson/include/rapidjson/internal/dtoa.h
+        lib/rapidjson/include/rapidjson/internal/ieee754.h
+        lib/rapidjson/include/rapidjson/internal/itoa.h
+        lib/rapidjson/include/rapidjson/internal/meta.h
+        lib/rapidjson/include/rapidjson/internal/pow10.h
+        lib/rapidjson/include/rapidjson/internal/stack.h
+        lib/rapidjson/include/rapidjson/internal/strfunc.h
+        lib/rapidjson/include/rapidjson/internal/strtod.h
+        lib/rapidjson/include/rapidjson/msinttypes/inttypes.h
+        lib/rapidjson/include/rapidjson/msinttypes/stdint.h
+        lib/rapidjson/include/rapidjson/allocators.h
+        lib/rapidjson/include/rapidjson/document.h
+        lib/rapidjson/include/rapidjson/encodedstream.h
+        lib/rapidjson/include/rapidjson/encodings.h
+        lib/rapidjson/include/rapidjson/filereadstream.h
+        lib/rapidjson/include/rapidjson/filestream.h
+        lib/rapidjson/include/rapidjson/filewritestream.h
+        lib/rapidjson/include/rapidjson/memorybuffer.h
+        lib/rapidjson/include/rapidjson/memorystream.h
+        lib/rapidjson/include/rapidjson/prettywriter.h
+        lib/rapidjson/include/rapidjson/rapidjson.h
+        lib/rapidjson/include/rapidjson/reader.h
+        lib/rapidjson/include/rapidjson/stringbuffer.h
+        lib/rapidjson/include/rapidjson/writer.h
+        lib/rapidjson/test/perftest/misctest.cpp
+        lib/rapidjson/test/perftest/perftest.cpp
+        lib/rapidjson/test/perftest/perftest.h
+        lib/rapidjson/test/perftest/platformtest.cpp
+        lib/rapidjson/test/perftest/rapidjsontest.cpp
+        lib/rapidjson/test/unittest/bigintegertest.cpp
+        lib/rapidjson/test/unittest/documenttest.cpp
+        lib/rapidjson/test/unittest/encodedstreamtest.cpp
+        lib/rapidjson/test/unittest/encodingstest.cpp
+        lib/rapidjson/test/unittest/filestreamtest.cpp
+        lib/rapidjson/test/unittest/jsoncheckertest.cpp
+        lib/rapidjson/test/unittest/namespacetest.cpp
+        lib/rapidjson/test/unittest/readertest.cpp
+        lib/rapidjson/test/unittest/stringbuffertest.cpp
+        lib/rapidjson/test/unittest/strtodtest.cpp
+        lib/rapidjson/test/unittest/unittest.cpp
+        lib/rapidjson/test/unittest/unittest.h
+        lib/rapidjson/test/unittest/valuetest.cpp
+        lib/rapidjson/test/unittest/writertest.cpp
+        lib/websocketpp/docs/simple_broadcast_server.cpp
+        lib/websocketpp/docs/simple_count_server_thread.cpp
+        lib/websocketpp/examples/associative_storage/associative_storage.cpp
+        lib/websocketpp/examples/broadcast_server/broadcast_server.cpp
+        lib/websocketpp/examples/debug_client/debug_client.cpp
+        lib/websocketpp/examples/debug_server/debug_server.cpp
+        lib/websocketpp/examples/dev/main.cpp
+        lib/websocketpp/examples/echo_client/echo_client.cpp
+        lib/websocketpp/examples/echo_server/echo_handler.hpp
+        lib/websocketpp/examples/echo_server/echo_server.cpp
+        lib/websocketpp/examples/echo_server_both/echo_server_both.cpp
+        lib/websocketpp/examples/echo_server_tls/echo_server_tls.cpp
+        lib/websocketpp/examples/enriched_storage/enriched_storage.cpp
+        lib/websocketpp/examples/external_io_service/external_io_service.cpp
+        lib/websocketpp/examples/external_io_service/tcp_echo_server.hpp
+        lib/websocketpp/examples/handler_switch/handler_switch.cpp
+        lib/websocketpp/examples/iostream_server/iostream_server.cpp
+        lib/websocketpp/examples/print_client/print_client.cpp
+        lib/websocketpp/examples/print_client_tls/print_client_tls.cpp
+        lib/websocketpp/examples/print_server/print_server.cpp
+        lib/websocketpp/examples/scratch_client/scratch_client.cpp
+        lib/websocketpp/examples/scratch_server/scratch_server.cpp
+        lib/websocketpp/examples/simple_broadcast_server/simple_broadcast_server.cpp
+        lib/websocketpp/examples/sip_client/sip_client.cpp
+        lib/websocketpp/examples/subprotocol_server/subprotocol_server.cpp
+        lib/websocketpp/examples/telemetry_client/telemetry_client.cpp
+        lib/websocketpp/examples/telemetry_server/telemetry_server.cpp
+        lib/websocketpp/examples/testee_client/testee_client.cpp
+        lib/websocketpp/examples/testee_server/testee_server.cpp
+        lib/websocketpp/examples/utility_client/utility_client.cpp
+        lib/websocketpp/test/connection/connection.cpp
+        lib/websocketpp/test/connection/connection_tu2.cpp
+        lib/websocketpp/test/connection/connection_tu2.hpp
+        lib/websocketpp/test/endpoint/endpoint.cpp
+        lib/websocketpp/test/extension/extension.cpp
+        lib/websocketpp/test/extension/permessage_deflate.cpp
+        lib/websocketpp/test/http/parser.cpp
+        lib/websocketpp/test/http/parser_perf.cpp
+        lib/websocketpp/test/logger/basic.cpp
+        lib/websocketpp/test/message_buffer/alloc.cpp
+        lib/websocketpp/test/message_buffer/message.cpp
+        lib/websocketpp/test/message_buffer/pool.cpp
+        lib/websocketpp/test/processors/extension_permessage_compress.cpp
+        lib/websocketpp/test/processors/hybi00.cpp
+        lib/websocketpp/test/processors/hybi07.cpp
+        lib/websocketpp/test/processors/hybi08.cpp
+        lib/websocketpp/test/processors/hybi13.cpp
+        lib/websocketpp/test/processors/processor.cpp
+        lib/websocketpp/test/random/none.cpp
+        lib/websocketpp/test/random/random_device.cpp
+        lib/websocketpp/test/roles/client.cpp
+        lib/websocketpp/test/roles/server.cpp
+        lib/websocketpp/test/transport/asio/base.cpp
+        lib/websocketpp/test/transport/asio/security.cpp
+        lib/websocketpp/test/transport/asio/timers.cpp
+        lib/websocketpp/test/transport/iostream/base.cpp
+        lib/websocketpp/test/transport/iostream/connection.cpp
+        lib/websocketpp/test/transport/iostream/endpoint.cpp
+        lib/websocketpp/test/transport/hybi_util.cpp
+        lib/websocketpp/test/transport/integration.cpp
+        lib/websocketpp/test/utility/close.cpp
+        lib/websocketpp/test/utility/error.cpp
+        lib/websocketpp/test/utility/frame.cpp
+        lib/websocketpp/test/utility/sha1.cpp
+        lib/websocketpp/test/utility/uri.cpp
+        lib/websocketpp/test/utility/utilities.cpp
+        lib/websocketpp/tutorials/utility_client/step1.cpp
+        lib/websocketpp/tutorials/utility_client/step2.cpp
+        lib/websocketpp/tutorials/utility_client/step3.cpp
+        lib/websocketpp/tutorials/utility_client/step4.cpp
+        lib/websocketpp/tutorials/utility_client/step5.cpp
+        lib/websocketpp/tutorials/utility_client/step6.cpp
+        lib/websocketpp/tutorials/utility_server/step1.cpp
+        lib/websocketpp/tutorials/utility_server/step2.cpp
+        lib/websocketpp/websocketpp/base64/base64.hpp
+        lib/websocketpp/websocketpp/common/asio.hpp
+        lib/websocketpp/websocketpp/common/asio_ssl.hpp
+        lib/websocketpp/websocketpp/common/chrono.hpp
+        lib/websocketpp/websocketpp/common/connection_hdl.hpp
+        lib/websocketpp/websocketpp/common/cpp11.hpp
+        lib/websocketpp/websocketpp/common/functional.hpp
+        lib/websocketpp/websocketpp/common/md5.hpp
+        lib/websocketpp/websocketpp/common/memory.hpp
+        lib/websocketpp/websocketpp/common/network.hpp
+        lib/websocketpp/websocketpp/common/platforms.hpp
+        lib/websocketpp/websocketpp/common/random.hpp
+        lib/websocketpp/websocketpp/common/regex.hpp
+        lib/websocketpp/websocketpp/common/stdint.hpp
+        lib/websocketpp/websocketpp/common/system_error.hpp
+        lib/websocketpp/websocketpp/common/thread.hpp
+        lib/websocketpp/websocketpp/common/time.hpp
+        lib/websocketpp/websocketpp/common/type_traits.hpp
+        lib/websocketpp/websocketpp/concurrency/basic.hpp
+        lib/websocketpp/websocketpp/concurrency/none.hpp
+        lib/websocketpp/websocketpp/config/asio.hpp
+        lib/websocketpp/websocketpp/config/asio_client.hpp
+        lib/websocketpp/websocketpp/config/asio_no_tls.hpp
+        lib/websocketpp/websocketpp/config/asio_no_tls_client.hpp
+        lib/websocketpp/websocketpp/config/boost_config.hpp
+        lib/websocketpp/websocketpp/config/core.hpp
+        lib/websocketpp/websocketpp/config/core_client.hpp
+        lib/websocketpp/websocketpp/config/debug.hpp
+        lib/websocketpp/websocketpp/config/debug_asio.hpp
+        lib/websocketpp/websocketpp/config/debug_asio_no_tls.hpp
+        lib/websocketpp/websocketpp/config/minimal_client.hpp
+        lib/websocketpp/websocketpp/config/minimal_server.hpp
+        lib/websocketpp/websocketpp/extensions/permessage_deflate/disabled.hpp
+        lib/websocketpp/websocketpp/extensions/permessage_deflate/enabled.hpp
+        lib/websocketpp/websocketpp/extensions/extension.hpp
+        lib/websocketpp/websocketpp/http/impl/parser.hpp
+        lib/websocketpp/websocketpp/http/impl/request.hpp
+        lib/websocketpp/websocketpp/http/impl/response.hpp
+        lib/websocketpp/websocketpp/http/constants.hpp
+        lib/websocketpp/websocketpp/http/parser.hpp
+        lib/websocketpp/websocketpp/http/request.hpp
+        lib/websocketpp/websocketpp/http/response.hpp
+        lib/websocketpp/websocketpp/impl/connection_impl.hpp
+        lib/websocketpp/websocketpp/impl/endpoint_impl.hpp
+        lib/websocketpp/websocketpp/impl/utilities_impl.hpp
+        lib/websocketpp/websocketpp/logger/basic.hpp
+        lib/websocketpp/websocketpp/logger/levels.hpp
+        lib/websocketpp/websocketpp/logger/stub.hpp
+        lib/websocketpp/websocketpp/logger/syslog.hpp
+        lib/websocketpp/websocketpp/message_buffer/alloc.hpp
+        lib/websocketpp/websocketpp/message_buffer/message.hpp
+        lib/websocketpp/websocketpp/message_buffer/pool.hpp
+        lib/websocketpp/websocketpp/processors/base.hpp
+        lib/websocketpp/websocketpp/processors/hybi00.hpp
+        lib/websocketpp/websocketpp/processors/hybi07.hpp
+        lib/websocketpp/websocketpp/processors/hybi08.hpp
+        lib/websocketpp/websocketpp/processors/hybi13.hpp
+        lib/websocketpp/websocketpp/processors/processor.hpp
+        lib/websocketpp/websocketpp/random/none.hpp
+        lib/websocketpp/websocketpp/random/random_device.hpp
+        lib/websocketpp/websocketpp/roles/client_endpoint.hpp
+        lib/websocketpp/websocketpp/roles/server_endpoint.hpp
+        lib/websocketpp/websocketpp/sha1/sha1.hpp
+        lib/websocketpp/websocketpp/transport/asio/security/base.hpp
+        lib/websocketpp/websocketpp/transport/asio/security/none.hpp
+        lib/websocketpp/websocketpp/transport/asio/security/tls.hpp
+        lib/websocketpp/websocketpp/transport/asio/base.hpp
+        lib/websocketpp/websocketpp/transport/asio/connection.hpp
+        lib/websocketpp/websocketpp/transport/asio/endpoint.hpp
+        lib/websocketpp/websocketpp/transport/base/connection.hpp
+        lib/websocketpp/websocketpp/transport/base/endpoint.hpp
+        lib/websocketpp/websocketpp/transport/debug/base.hpp
+        lib/websocketpp/websocketpp/transport/debug/connection.hpp
+        lib/websocketpp/websocketpp/transport/debug/endpoint.hpp
+        lib/websocketpp/websocketpp/transport/iostream/base.hpp
+        lib/websocketpp/websocketpp/transport/iostream/connection.hpp
+        lib/websocketpp/websocketpp/transport/iostream/endpoint.hpp
+        lib/websocketpp/websocketpp/transport/stub/base.hpp
+        lib/websocketpp/websocketpp/transport/stub/connection.hpp
+        lib/websocketpp/websocketpp/transport/stub/endpoint.hpp
+        lib/websocketpp/websocketpp/client.hpp
+        lib/websocketpp/websocketpp/close.hpp
+        lib/websocketpp/websocketpp/connection.hpp
+        lib/websocketpp/websocketpp/connection_base.hpp
+        lib/websocketpp/websocketpp/endpoint.hpp
+        lib/websocketpp/websocketpp/endpoint_base.hpp
+        lib/websocketpp/websocketpp/error.hpp
+        lib/websocketpp/websocketpp/frame.hpp
+        lib/websocketpp/websocketpp/server.hpp
+        lib/websocketpp/websocketpp/uri.hpp
+        lib/websocketpp/websocketpp/utf8_validator.hpp
+        lib/websocketpp/websocketpp/utilities.hpp
+        lib/websocketpp/websocketpp/version.hpp
+        src/internal/sio_client_impl.cpp
+        src/internal/sio_client_impl.h
+        src/internal/sio_packet.cpp
+        src/internal/sio_packet.h
+        src/sio_client.cpp
+        src/sio_client.h
+        src/sio_message.h
+        src/sio_socket.cpp
+        src/sio_socket.h
+        test/json.hpp
+        test/sio_test.cpp)
