@@ -1,0 +1,3 @@
+[submodule "WebRtcSDK"]
+	path = WebRtcSDK
+	url = https://github.com/hongzhuxuke/WebRtcSDK.git
