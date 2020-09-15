@@ -114,7 +114,7 @@
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;VHPAASSDK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)VhallWebRtcSDK\WebRTC\include;$(ProjectDir)VhallWebSocket\VHWebSocket;$(ProjectDir)VhallNetWork\VhallNetWork\VhallNetWork;$(ProjectDir)VhallWebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\common;$(ProjectDir)VhallWebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\signalling\tool;$(ProjectDir)VhallWebSocket\socket_io\socket.io-client-cpp;.\VhallWebRtcSDK;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)WebRtcSDK\WebRTC\include;$(ProjectDir)VhallWebSocket\VHWebSocket;$(ProjectDir)VhallNetWork\VhallNetWork\VhallNetWork;$(ProjectDir)WebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\common;$(ProjectDir)WebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\signalling\tool;$(ProjectDir)\VhallWebSocket\socket_io\socket.io-client-cpp;.\WebRtcSDK;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -129,7 +129,7 @@
     </Link>
     <QtMoc>
       <Define>UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;VHPAASSDK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</Define>
-      <IncludePath>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)VhallWebRtcSDK\WebRTC\include;$(ProjectDir)VhallWebSocket\VHWebSocket;$(ProjectDir)VhallNetWork\VhallNetWork\VhallNetWork;$(ProjectDir)VhallWebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\common;$(ProjectDir)VhallWebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\signalling\tool;$(ProjectDir)VhallWebSocket\socket_io\socket.io-client-cpp;.\VhallWebRtcSDK;%(AdditionalIncludeDirectories)</IncludePath>
+      <IncludePath>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)WebRtcSDK\WebRTC\include;$(ProjectDir)VhallWebSocket\VHWebSocket;$(ProjectDir)VhallNetWork\VhallNetWork\VhallNetWork;$(ProjectDir)WebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\common;$(ProjectDir)WebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\signalling\tool;$(ProjectDir)\VhallWebSocket\socket_io\socket.io-client-cpp;.\WebRtcSDK;%(AdditionalIncludeDirectories)</IncludePath>
       <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
       <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
     </QtMoc>
@@ -169,7 +169,7 @@
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;VHPAASSDK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)VhallWebRtcSDK\WebRTC\include;$(ProjectDir)VhallWebSocket\VHWebSocket;$(ProjectDir)VhallNetWork\VhallNetWork\VhallNetWork;$(ProjectDir)VhallWebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\common;$(ProjectDir)VhallWebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\signalling\tool;$(ProjectDir)VhallWebSocket\socket_io\socket.io-client-cpp;.\VhallWebRtcSDK;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)WebRtcSDK\WebRTC\include;$(ProjectDir)VhallWebSocket\VHWebSocket;$(ProjectDir)VhallNetWork\VhallNetWork\VhallNetWork;$(ProjectDir)WebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\common;$(ProjectDir)WebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\signalling\tool;$(ProjectDir)VhallWebSocket\socket_io\socket.io-client-cpp;.\WebRtcSDK;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
@@ -184,7 +184,7 @@
     </Link>
     <QtMoc>
       <Define>UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;VHPAASSDK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</Define>
-      <IncludePath>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)VhallWebRtcSDK\WebRTC\include;$(ProjectDir)VhallWebSocket\VHWebSocket;$(ProjectDir)VhallNetWork\VhallNetWork\VhallNetWork;$(ProjectDir)VhallWebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\common;$(ProjectDir)VhallWebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\signalling\tool;$(ProjectDir)VhallWebSocket\socket_io\socket.io-client-cpp;.\VhallWebRtcSDK;%(AdditionalIncludeDirectories)</IncludePath>
+      <IncludePath>.\GeneratedFiles;.;.\GeneratedFiles\$(ConfigurationName);$(ProjectDir)WebRtcSDK\WebRTC\include;$(ProjectDir)VhallWebSocket\VHWebSocket;$(ProjectDir)VhallNetWork\VhallNetWork\VhallNetWork;$(ProjectDir)WebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\common;$(ProjectDir)WebRtcSDK\Interactive_live_SDK_win\vhall_webrtc_sdk\signalling\tool;$(ProjectDir)VhallWebSocket\socket_io\socket.io-client-cpp;.\WebRtcSDK;%(AdditionalIncludeDirectories)</IncludePath>
       <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
       <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
     </QtMoc>

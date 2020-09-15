@@ -163,9 +163,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)$(QTDIR)\lib;$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x86\lib;$(ProjectDir)3rdParty\libssh2-1.8.0-vc15-x86\lib;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x86\lib;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x86\lib;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x86\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)3rdParty\libcurl-7.61.1-vc15-x64\lib;$(ProjectDir)3rdParty\libssh2-1.9.0-vc15-x64\lib;$(ProjectDir)3rdParty\nghttp2-1.32.0-vc15-x64\lib;$(ProjectDir)3rdParty\openssl-1.1.0i-vc15-x64\lib\Release;$(ProjectDir)3rdParty\zlib-1.2.11-vc15-x64\lib</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libcurl_a.lib;libssh2_a.lib;libssh2.lib;nghttp2.lib;libcrypto.lib;libssl.lib;zlib_a.lib;Ws2_32.lib;Wldap32.lib;winmm.lib;Crypt32.lib;Normaliz.lib;User32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcurl_a.lib;libssh2_a.lib;libssh2.lib;nghttp2.lib;libcrypto64MD.lib;libssl64MD.lib;zlib_a.lib;Ws2_32.lib;Wldap32.lib;winmm.lib;Crypt32.lib;Normaliz.lib;User32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <QtMoc>
       <Define>UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;VHALLNETWORK_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</Define>
