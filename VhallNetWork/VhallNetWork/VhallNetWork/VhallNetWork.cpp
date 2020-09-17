@@ -501,7 +501,7 @@ HttpManager::HttpManager()
 HttpManager::~HttpManager()
 {
     LOGD("HttpManager::~HttpManager");
-    Release();
+    //Release();
 
     LOGD("HttpManager::~HttpManager  end");
     REMOVE_ALL_LOG;

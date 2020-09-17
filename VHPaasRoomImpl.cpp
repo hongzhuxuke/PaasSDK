@@ -1,6 +1,6 @@
 #include "VHPaasRoomImpl.h"
 #include <mutex>
-#include "./log/vhall_paasSdk_log.h"
+#include "vhall_log.h"
 #include "lib/rapidjson/include/rapidjson/rapidjson.h"
 #include "lib/rapidjson/include/rapidjson/stringbuffer.h"
 #include "lib/rapidjson/include/rapidjson/writer.h"
@@ -11,26 +11,17 @@
 #include <stdio.h>    
 #include <iostream> 
 #include "src/sio_client.h"
-#include "LogReport.h"
-
 
 using namespace rapidjson;
 using namespace std;
+using namespace vlive;
 
 static std::mutex gSDKMutex;
 static VHPaasRoomImpl* gPaasSDKInstance = nullptr;
 static std::atomic_bool mbIsRuning = false;
-CThreadLock VHPaasRoomImpl::mStatic_taskListMutex;
-HANDLE VHPaasRoomImpl::mStatic_TaskEvent;   //
-HANDLE VHPaasRoomImpl::mStatic_ThreadExitEvent;
-std::atomic_bool VHPaasRoomImpl::mStatic_bThreadRun = true; //
-std::list<CPaasTaskEvent> VHPaasRoomImpl::mStatic_taskEventList; //
+HANDLE gTaskEvent = nullptr;
 
-
-
-#define RTC_FAILED    "failed"
-#define RTC_SUCCESS   "success"
-
+std::atomic_bool VHPaasRoomImpl::mbThreadRunning = false;
 
 std::string& replace_all(std::string& str, const std::string& old_value, const std::string&   new_value)
 {
@@ -59,116 +50,194 @@ std::string WString2String(const std::wstring& ws)
 }
 
 VHPaasRoomImpl::VHPaasRoomImpl() {
-
+    InitLog();
     mIsHost = true;
     bIsSettinglayout = false;
-    mpLogReport = new LogReport;
-
-    mStatic_bThreadRun = true;
-    mProcessThread = new std::thread(VHPaasRoomImpl::ThreadProcess, this);
-    if (mProcessThread) {
-       LOGD("create task thread success");
-
-       mStatic_TaskEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
-       mStatic_ThreadExitEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
-    }
-
-
     LOGD("PAASSDK_VER : %s", PAASSDK_VER);
+    mbThreadRunning = true;
+    mProcessThread = new std::thread(VHPaasRoomImpl::ThreadProcess,this);
+    gTaskEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
 VHPaasRoomImpl::~VHPaasRoomImpl() {
     mbIsRuning = false;
-    LOGD("VHPaasRoomImpl::~VHPaasRoomImpl");
-    if (mpHttpManagerInterface) {
-        //mpHttpManagerInterface->Release();
-        DestoryHttpManagerInstance();
-        mpHttpManagerInterface = nullptr;
+    if (mProcessThread) {
+       mbThreadRunning = false;
+       mProcessThread->join();
+       delete mProcessThread;
+       mProcessThread = nullptr;
     }
+    if (gTaskEvent) {
+       CloseHandle(gTaskEvent);
+       gTaskEvent = nullptr;
+    }
+    LOGD("VHPaasRoomImpl::~VHPaasRoomImpl");
     if (mpWebRtcSDKInterface) {
-        //delete mpWebRtcSDKInterface;
-        //mpWebRtcSDKInterface = nullptr;
         DestroyWebRtcSDKInstance();
     }
     if (mpVHWebSocketInterface) {
-        mbDisConnectWebSocket = true;
+        SendServerLeaveMsg(mContext);        
         mpVHWebSocketInterface->DisConnectWebSocket();
         mpVHWebSocketInterface->SyncDisConnectServer();
         delete mpVHWebSocketInterface;
         mpVHWebSocketInterface = nullptr;
         mbLoginDone = false;
     }
+    LOGD("VHPaasRoomImpl::~VHPaasRoomImpl end");
 }
+
+DWORD WINAPI VHPaasRoomImpl::ThreadProcess(LPVOID p) {
+   LOGD("ThreadProcess");
+   while (mbThreadRunning) {
+      if (gTaskEvent) {
+         DWORD ret = WaitForSingleObject(gTaskEvent, 1000);
+         if (p) {
+            VHPaasRoomImpl* sdk = (VHPaasRoomImpl*)(p);
+            if (sdk) {
+               sdk->TaskProcess();
+            }
+         }
+      }
+   }
+   return 0;
+}
+
+void VHPaasRoomImpl::TaskProcess() {  
+   TaskData data = GetProcessTask();
+   switch (data.task_id)
+   {
+   case TaskIndex_ReConnect_Socket: {
+      if (mbLoginDone) {
+         if (mpVHWebSocketInterface) {
+            LOGD("DisConnectWebSocket");
+            mpVHWebSocketInterface->DisConnectWebSocket();
+            LOGD("SyncDisConnectServer");
+            mpVHWebSocketInterface->SyncDisConnectServer();
+            LOGD("SyncDisConnectServer end");
+
+            std::string url = replace_all(mLoginInfo.socket_server, "https", "ws");
+            url = replace_all(mLoginInfo.socket_server, "http", "ws");
+            mpVHWebSocketInterface->ConnectServer(url.c_str(), mLoginInfo.connection_token.c_str());
+            LOGD("url :%s connection_token %s", url.c_str(), mLoginInfo.connection_token.c_str());
+
+            std::string chatUrl = replace_all(mLoginInfo.nginx_server, "http://", "");
+            //std::string listenChannel = mInavRoomId;
+            //if (mChannelId.size() > 0) {
+            //    listenChannel = mInavRoomId + "/" + mChannelId;
+            //}
+            std::string listenChannel = mChannelId;
+            mpVHWebSocketInterface->ConnectWebSocket(mLoginInfo.nginx_server, listenChannel);
+         }
+      }
+      break;
+   }
+   default:
+      break;
+   }
+}
+
+void VHPaasRoomImpl::InsertProcessTask(TaskData task) {
+   std::unique_lock<std::mutex> lock(mTaskMutex);
+   mTaskList.push_back(task);
+}
+
+TaskData VHPaasRoomImpl::GetProcessTask() {
+   std::unique_lock<std::mutex> lock(mTaskMutex);
+   if (mTaskList.size() > 0) {
+      TaskData data = mTaskList.front();
+      mTaskList.pop_front();
+      return data;
+   }
+   return TaskData();
+}
+
 void VHPaasRoomImpl::OnOpen() {
     LOGD("OnOpen");
+    //if (mbIsRuning && mpVHRoomMonitor) {
+    //   mpVHRoomMonitor->OnSuccessedEvent(RoomEvent_OnNetWork_Reconnect);
+    //}
 }
 
 void VHPaasRoomImpl::OnFail() {
     LOGD("OnFail");
-    if (mbIsRuning && mVHRoomDelegate) {
-       mVHRoomDelegate->OnRoomConnectState(RoomConnectState_DisConnect);
+    if (mbIsRuning && mpVHRoomMonitor) {
+        string msg = "network open fail"; 
+        mpVHRoomMonitor->OnFailedEvent(RoomEvent_Login,4000, msg);
     }
 }
  
 void VHPaasRoomImpl::OnReconnecting() {
     LOGD("OnReconnecting");
-    if (mbIsRuning && mVHRoomDelegate) {
-       mVHRoomDelegate->OnRoomConnectState(RoomConnectState_Reconnecting);
+    if (mbIsRuning && mpVHRoomMonitor) {
+       string msg = "network reconneting";
+       mpVHRoomMonitor->OnFailedEvent(RoomEvent_OnNetWork_Reconnecting,4001, msg);
     }
 }
 
 void VHPaasRoomImpl::OnReconnect(unsigned code, unsigned num) {
     LOGD("OnReconnect code %d num %d", code, num);
-    if (mbIsRuning && mVHRoomDelegate) {
-        mVHRoomDelegate->OnRoomConnectState(RoomConnectState_Connected);
-    }
+    //if (mbIsRuning && mpVHRoomMonitor) {
+    //    mpVHRoomMonitor->OnSuccessedEvent(RoomEvent_OnNetWork_Reconnect);
+    //}
 }
 void VHPaasRoomImpl::OnClose() {
     LOGD("OnClose");
-    //不是主动断开的，要重连
-    if (mVHRoomDelegate && !mbDisConnectWebSocket) {
-       mVHRoomDelegate->OnRoomConnectState(RoomConnectState_NetWorkDisConnect);
+    if (mbIsRuning && mpVHRoomMonitor && mbLoginDone) {
+       //mpVHRoomMonitor->OnFailedEvent(RoomEvent_OnNetWork_Close, 4000, "network open close");
+       TaskData task;
+       task.task_id = TaskIndex_ReConnect_Socket;
+       InsertProcessTask(task);
     }
 }
  
 void VHPaasRoomImpl::OnSocketOpen(std::string const& nsp) {
-    LOGD("OnSocketOpen msg:%s mbLoginDone:%d mbIsRuning:%d", nsp.c_str(), (int)mbLoginDone, (int)mbIsRuning);
-    if (mbIsRuning && mVHRoomDelegate && !mbLoginDone) {
-        mVHRoomDelegate->OnSuccessedEvent(RoomEvent_Login);
-        mbLoginDone = true;
-    };
-
-    if (mbLoginDone) {
-        SendServerJoinMsg(mContext);
-    }
+   LOGD("OnSocketOpen msg:%s mbLoginDone:%d mbIsRuning:%d", nsp.c_str(), (int)mbLoginDone, (int)mbIsRuning);
+   if (mbIsRuning && mpVHRoomMonitor && !mbLoginDone) {
+      mpVHRoomMonitor->OnSuccessedEvent(RoomEvent_Login);
+      mbLoginDone = true;
+      if (mbLoginDone) {
+         SendServerJoinMsg(mContext);
+      }
+   }
+   else if (mbIsRuning && mpVHRoomMonitor && mbLoginDone) {
+      mpVHRoomMonitor->OnSuccessedEvent(RoomEvent_OnNetWork_Reconnect);
+      if (mbLoginDone) {
+         SendServerJoinMsg(mContext);
+      }
+   }
 }
 
 void VHPaasRoomImpl::SendServerJoinMsg(const std::string context) {
-   std::list<std::string>::iterator iter = mListenChannels.begin();
-   while (iter != mListenChannels.end()) {
-      SendJoinMsg(*iter, context);
-      iter++;
+    if (mChannelId.size() > 0) {
+        SendJoinMsg(mChannelId, context);
+    }
+
+    if (mInavRoomId.size() > 0) {
+        SendJoinMsg(mInavRoomId, context);
+    }
+}
+
+void VHPaasRoomImpl::SendServerLeaveMsg(const std::string context) {
+   if (mChannelId.size() > 0) {
+      SendLeaveMsg(mChannelId, context);
    }
 
-    //if (mChannelId.size() > 0) {
-    //    SendJoinMsg(mChannelId, context);
-    //}
-
-    //if (mInavRoomId.size() > 0) {
-    //    SendJoinMsg(mInavRoomId, context);
-    //}
+   if (mInavRoomId.size() > 0) {
+      SendLeaveMsg(mInavRoomId, context);
+   }
 }
 
 void VHPaasRoomImpl::SendJoinMsg(std::string id, const std::string context) {
+    //当消息服务连接成功后，加入对应房间，监听对应频道消息。
     rapidjson::Document document;
     document.SetObject();
     rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
 
-    rapidjson::Value username(StringRef(id.c_str()));
-    document.AddMember("channel", username, allocator);
+    rapidjson::Value channel_id(StringRef(id.c_str()));
+    document.AddMember("channel", channel_id, allocator);
 
-    rapidjson::Value password(StringRef(mThridUserId.c_str()));
-    document.AddMember("third_party_user_id", password, allocator);
+    rapidjson::Value third_party_user_id(StringRef(mThridUserId.c_str()));
+    document.AddMember("third_party_user_id", third_party_user_id, allocator);
 
 
     rapidjson::Value contextStr(StringRef(context.c_str()));
@@ -184,58 +253,54 @@ void VHPaasRoomImpl::SendJoinMsg(std::string id, const std::string context) {
     }
     LOGD("OnSocketOpen  SendMsg:%s", data.c_str());
 }
+
+void VHPaasRoomImpl::SendLeaveMsg(std::string id, const std::string context) {
+   rapidjson::Document document;
+   document.SetObject();
+   rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+   rapidjson::Value channel_id(StringRef(id.c_str()));
+   document.AddMember("channel", channel_id, allocator);
+
+   rapidjson::Value third_party_user_id(StringRef(mThridUserId.c_str()));
+   document.AddMember("third_party_user_id", third_party_user_id, allocator);
+
+   rapidjson::Value contextStr(StringRef(context.c_str()));
+   document.AddMember("context", contextStr, allocator);
+
+   StringBuffer buffer;
+   rapidjson::Writer<StringBuffer> writer(buffer);
+   document.Accept(writer);
+   std::string data = buffer.GetString();
+
+   if (mpVHWebSocketInterface) {
+      mpVHWebSocketInterface->SendMsg("leave", data);
+   }
+   LOGD("OnSocketOpen  SendMsg leave:%s", data.c_str());
+}
  
 void VHPaasRoomImpl::OnSocketClose(std::string const& nsp) {
     LOGD("OnSocketClose  nsp:%s", nsp.c_str());
 }
 
-void VHPaasRoomImpl::OnServiceMsg(std::string type, const std::wstring user_id, const std::wstring nickname, const std::string rolename,bool is_banned, int devType, int uv/* = 0*/) {
-    if (mbIsRuning && mVHRoomDelegate) {
-        mVHRoomDelegate->OnServiceMsg(type, user_id, nickname, rolename, is_banned, devType);
+void VHPaasRoomImpl::OnRecvChatCtrlMsg(const char* msgType, const char* msg) {
+    if (mbIsRuning && mpVHRoomMonitor) {
+        mpVHRoomMonitor->OnRecvChatCtrlMsg(vlive::ChatMsgType::ChatMsgType_Disable, msg);
     }
 }
 
-void VHPaasRoomImpl::OnRecvAllMsg(const char* data, int length) {
-   if (mMsgDelegate) {
-      mMsgDelegate->OnRecvChatMsg(std::string(data,length));
-   }
-}
-
-void VHPaasRoomImpl::InitRtcRoomParameter(const InavInfo & inavInfo, const std::string & log_server, const std::string & InavRoomId, const std::string & Appid)
-{
-   //mInavInfo.inav_token = inavInfo.inav_token;
-   //mInavInfo.third_party_user_id = inavInfo.third_party_user_id;
-   //mInavInfo.push_address = inavInfo.push_address;
-   //mInavInfo.account_id = inavInfo.account_id;
-   //mLoginInfo.log_server = log_server;
-   //mInavRoomId = InavRoomId;
-   //mAppid = Appid;
-}
-
-void VHPaasRoomImpl::SetDebugLogAddr(const std::string& addr) {
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->SetDebugLogAddr(addr);
-   }
-}
-
-int VHPaasRoomImpl::InitSDK(WebRtcSDKEventInterface* obj, VHRoomDelegate * VHRoomDelegate,WebRtcSDKEventInterface* rtc_delegate, std::wstring logPath /*= std::string()*/,const std::string domain /*= "http://api.vhallyun.com/sdk/v1"*/) {
-	//std::wstring logFile = L"paassSdk";
-	InitPaasSdkLog(logPath);
+void VHPaasRoomImpl::InitSDK(VLiveRoomMsgEventDelegate* monitor, VRtcEngineEventDelegate* rtc_room_delegate, const std::string domain /*= "http://api.vhallyun.com/sdk/v1"*/, std::wstring logPath /*= std::string()*/) {
     LOGD("InitSDK");
-    if (mbIsRuning) {
-       return -1;
-    }
-    //mpVHRoomMonitor = monitor;
-    mVHRoomDelegate = VHRoomDelegate;
-    mRtcDelegate = rtc_delegate;
+    mpVHRoomMonitor = monitor;
+    mpRtcRoomDelegate = rtc_room_delegate;
     mDomain = domain;
     if (mpHttpManagerInterface == nullptr) {
         mpHttpManagerInterface = GetHttpManagerInstance();
         LOGD("new HttpManager");
         if (mpHttpManagerInterface) {
             LOGD("Init HttpManager");
-            mpHttpManagerInterface->Init(logPath);
-            mpLogReport->RegisterHttpSender(mpHttpManagerInterface);
+            //mpHttpManagerInterface->Init(logPath);
+            mLogReport.RegisterHttpSender(mpHttpManagerInterface);
             UploadReportSDKInit();
         }
     }
@@ -244,32 +309,35 @@ int VHPaasRoomImpl::InitSDK(WebRtcSDKEventInterface* obj, VHRoomDelegate * VHRoo
         LOGD("GetWebRtcSDKInstance");
         if (mpWebRtcSDKInterface) {
             LOGD("RegisterCallBackObj");
-            mpWebRtcSDKInterface->InitSDK(mRtcDelegate, logPath);
+            mpWebRtcSDKInterface->InitSDK(mpRtcRoomDelegate, logPath);
         }
     }
-    //if (mpVHWebSocketInterface == nullptr) {
-    //    mpVHWebSocketInterface = CreateVHWebSocket();
-    //    LOGD("CreateVHWebSocket");
-    //    mpVHWebSocketInterface->RegisterCallback(this);
-    //}
+    if (mpVHWebSocketInterface == nullptr) {
+        mpVHWebSocketInterface = CreateVHWebSocket();
+        LOGD("CreateVHWebSocket");
+        mpVHWebSocketInterface->RegisterCallback(this);
+    }
     mbIsRuning = true;
-    return 0;
+    //return 0;
 }
 
-/*
-*  网络断开重连接口。
-*  到回调OnRoomConnectState接收到 RoomConnectState_NetWorkDisConnect 表示网络连接异常，需要手动重连。
-*/
-int VHPaasRoomImpl::ReconnectNetWork(){
-   //消息服务
-   std::string url = replace_all(mLoginInfo.socket_server, "http", "ws");
-   mpVHWebSocketInterface->ConnectServer(url.c_str(), mLoginInfo.connection_token.c_str());
-   LOGD("url :%s connection_token %s", url.c_str(), mLoginInfo.connection_token.c_str());
-   return 0;
+void VHPaasRoomImpl::SetHttpProxy(bool enable, std::string addr/* = std::string()*/, int port/* = 0*/, std::string userName/* = std::string()*/, std::string pwd /*= std::string()*/) {
+    bIsEnableProxy = enable;
+    if (enable) {
+        mProxyAddr = addr;
+        mProxyUserName = userName;
+        mProxyUserPwd = pwd;
+        mProxyPort = port;
+    }
+    else {
+        mProxyAddr = "";
+        mProxyUserName = "";
+        mProxyUserPwd = "";
+        mProxyPort = 0;
+    }
 }
 
-bool VHPaasRoomImpl::Login(const std::string& accesstoken, const std::string& appid, 
-   const std::string& thrid_user_id, const std::string& roomid, const std::string& live_roomid, const std::list<std::string> listenChannel, const std::string context /*= std::string()*/) {
+bool VHPaasRoomImpl::LoginRoom(const std::string& accesstoken, const std::string& appid, const std::string& thrid_user_id, const std::string& roomid, const std::string& live_roomid,const std::string channel_id /*= std::string()*/, const std::string context /*= std::string()*/) {
     LOGD("LoginHVRoom");
     if (accesstoken.length() == 0 || appid.length() == 0 || thrid_user_id.length() == 0 || roomid.length() == 0) {
         LOGD("param is null");
@@ -277,16 +345,17 @@ bool VHPaasRoomImpl::Login(const std::string& accesstoken, const std::string& ap
     }
 
     UploadReportSDKLogin(appid, thrid_user_id);
+
     LOGD("LoginHVRoom accesstoken:%s appid:%s thrid_user_id:%s roomid:%s", accesstoken.c_str(), appid.c_str(), thrid_user_id.c_str(), roomid.c_str());
     mContext = context;
     mAccesstoken = accesstoken;
     mAppid = appid;
     mThridUserId = thrid_user_id;
-    mInavRoomId = live_roomid;
-    mLiveRoomId = roomid;
-    mListenChannels = listenChannel;
+    mInavRoomId = roomid;
+    mLiveRoomId = live_roomid;
+    mChannelId = channel_id;
     //登录时先请求start信息
-    HTTP_GET_REQUEST httpGet(GetInvaStartUrl()/*,"", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetInvaStartUrl());
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             //解析响应的start信息
@@ -298,41 +367,21 @@ bool VHPaasRoomImpl::Login(const std::string& accesstoken, const std::string& ap
     return false;
 }
 
-void VHPaasRoomImpl::RegisterMsgListenr(RecvMsgDelegate* recv_msg_delegate) {
-   mMsgDelegate = recv_msg_delegate;
-}
-
-void VHPaasRoomImpl::StopRecvAllRemoteStream() {
-   if (mpWebRtcSDKInterface) {
-      LOGD("StopRecvAllRemoteStream");
-      mpWebRtcSDKInterface->StopRecvAllRemoteStream();
-   }
-}
-
-std::string VHPaasRoomImpl::LocalStreamId()
-{
-   std::string strRef = "";
-   if (mpWebRtcSDKInterface) {
-      LOGD("LocalStreamId");
-      strRef = mpWebRtcSDKInterface->LocalStreamId();
-   }
-   return strRef;
-}
 
 void VHPaasRoomImpl::AnalysisStartInfo(std::string data, int code) {
     if (code != 0) {
-        if (mbIsRuning && mVHRoomDelegate) {
+        if (mbIsRuning && mpVHRoomMonitor) {
             LOGD("OnFailedEvent data:%s code:%d", data.c_str(), code);
-            mVHRoomDelegate->OnFailedEvent(RoomEvent_Login, code, data);
+            mpVHRoomMonitor->OnFailedEvent(RoomEvent_Login,code, data);
         }
     }
     else {
         //解析start登录数据
         ParamToStartInfoResp(data);
-        if (mbIsRuning && mVHRoomDelegate) {
+        if (mbIsRuning && mpVHRoomMonitor) {
             if (mLoginInfo.mCode != 200) {
                 LOGD("OnFailedEvent data:%s code:%d", data.c_str(), code);
-                mVHRoomDelegate->OnFailedEvent(RoomEvent_Login, mLoginInfo.mCode, mLoginInfo.mNoticeMsg);
+                mpVHRoomMonitor->OnFailedEvent(RoomEvent_Login,mLoginInfo.mCode, mLoginInfo.mNoticeMsg);
             }
             else {
                 //如果成功获取互动房间信息
@@ -344,7 +393,7 @@ void VHPaasRoomImpl::AnalysisStartInfo(std::string data, int code) {
 
 void VHPaasRoomImpl::ToGetInavInfo() {
     //请求互动房间信息
-    HTTP_GET_REQUEST httpGet(GetInavInfoUrl()/*,"", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetInavInfoUrl());
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             LOGD("AnalysisGetInavInfo data:%s code:%d", data.c_str(), code);
@@ -356,7 +405,7 @@ void VHPaasRoomImpl::ToGetInavInfo() {
 void VHPaasRoomImpl::ReFreshPermission()
 {
 	//请求互动房间信息
-	HTTP_GET_REQUEST httpGet(GetInavInfoUrl()/*, "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+	HTTP_GET_REQUEST httpGet(GetInavInfoUrl());
 	if (mpHttpManagerInterface) {
 		mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
 			LOGD("ReFreshPermission data:%s code:%d", data.c_str(), code);
@@ -369,20 +418,18 @@ void VHPaasRoomImpl::ReFreshPermission()
 
 void VHPaasRoomImpl::AnalysisGetInavInfo(std::string data, int code) {
     if (code != 0) {
-        if (mbIsRuning && mVHRoomDelegate) {
+        if (mbIsRuning && mpVHRoomMonitor) {
             LOGD("OnFailedEvent data:%s code:%d", data.c_str(), code);
-            mVHRoomDelegate->OnFailedEvent(RoomEvent_Login, code, data);
+            mpVHRoomMonitor->OnFailedEvent(RoomEvent_Login, code, data);
         }
     }
     else {
         //解析登录数据
         ParamToInavInfoResp(data);
-        //完成解析登录数据
-
-        if (mbIsRuning && mVHRoomDelegate) {
+        if (mbIsRuning && mpVHRoomMonitor) {
             if (mInavInfo.mCode != 200) {
                 LOGD("OnFailedEvent data:%s code:%d", data.c_str(), code);
-                mVHRoomDelegate->OnFailedEvent(RoomEvent_Login, mInavInfo.mCode, mInavInfo.mNoticeMsg);
+                mpVHRoomMonitor->OnFailedEvent(RoomEvent_Login, mInavInfo.mCode, mInavInfo.mNoticeMsg);
             }
             else {
                 if (mpVHWebSocketInterface) {
@@ -395,7 +442,6 @@ void VHPaasRoomImpl::AnalysisGetInavInfo(std::string data, int code) {
                     mpVHWebSocketInterface->On("Inav", [&](const std::string& name, const std::string& msg)->void {
                         LOGD("Inav msg:%s", msg.c_str());
                         ParamRecvInavMsg(msg);
-                        ParamRecvSocketMsg(msg);
                     });
                     mpVHWebSocketInterface->On("msg", [&](const std::string& name, const std::string& msg)->void {
                         LOGD("Inav msg:%s", msg.c_str());
@@ -409,23 +455,20 @@ void VHPaasRoomImpl::AnalysisGetInavInfo(std::string data, int code) {
                         LOGD("cmd msg:%s", msg.c_str());
                         ParamRecvSocketMsg(msg);
                     });
+ 
                     mbLoginDone = false;
+                    std::string url = replace_all(mLoginInfo.socket_server, "https", "ws");
+                    url = replace_all(mLoginInfo.socket_server, "http", "ws");
+                    mpVHWebSocketInterface->ConnectServer(url.c_str(), mLoginInfo.connection_token.c_str());
+                    LOGD("url :%s connection_token %s", url.c_str(), mLoginInfo.connection_token.c_str());
 
-                    ////消息服务
-                    //std::string url = replace_all(mLoginInfo.socket_server, "http", "ws");
-                    //mpVHWebSocketInterface->ConnectServer(url.c_str(), mLoginInfo.connection_token.c_str());
-                    //LOGD("url :%s connection_token %s", url.c_str(), mLoginInfo.connection_token.c_str());
-                    ////聊天服务
-                    //if (mListenChannels.size() > 0) {
-                    //   std::string chatUrl = replace_all(mLoginInfo.nginx_server, "http://", "");
-                    //   std::string listenChannel;
-                    //   std::list<std::string>::iterator iter = mListenChannels.begin();
-                    //   while (iter != mListenChannels.end()) {
-                    //      listenChannel = (*iter) + "/";
-                    //      iter++;
-                    //   }
-                    //   mpVHWebSocketInterface->ConnectWebSocket(mLoginInfo.nginx_server, listenChannel);
+                    std::string chatUrl = replace_all(mLoginInfo.nginx_server, "http://", "");
+                    //std::string listenChannel = mInavRoomId;
+                    //if (mChannelId.size() > 0) {
+                    //    listenChannel = mInavRoomId + "/" + mChannelId;
                     //}
+                    std::string listenChannel = mChannelId;
+                    mpVHWebSocketInterface->ConnectWebSocket(mLoginInfo.nginx_server, listenChannel);
                 }
             }
         }
@@ -435,9 +478,9 @@ void VHPaasRoomImpl::AnalysisGetInavInfo(std::string data, int code) {
 void VHPaasRoomImpl::ReFreshPermissionAnalysisInfo(std::string data, int code)
 {
 	if (code != 0) {
-		if (mbIsRuning && mVHRoomDelegate) {
+		if (mbIsRuning && mpVHRoomMonitor) {
 			LOGD("ReFreshPermissionAnalysisInfo data:%s code:%d", data.c_str(), code);
-			mVHRoomDelegate->OnFailedEvent(RoomEvent_GetPermission, code, data);
+			//mpVHRoomMonitor->OnFailedEvent(RoomEvent_Login, code, data);
 		}
 	}
 	else {
@@ -560,7 +603,8 @@ void VHPaasRoomImpl::ParamToStartInfoResp(const std::string& msg) {
     }
 }
 
-void VHPaasRoomImpl::RefFreshPermissionToInfo(std::string data){
+void VHPaasRoomImpl::RefFreshPermissionToInfo(std::string data)
+{
 	LOGD("data:%s", data.c_str());
 	rapidjson::Document doc;
 	doc.Parse<0>(data.c_str());
@@ -570,51 +614,50 @@ void VHPaasRoomImpl::RefFreshPermissionToInfo(std::string data){
 	}
 
 	if (doc.IsObject()) {
-      int code;
-      std::string msg;
-      if (doc.HasMember("code") && doc["code"].IsInt()) {
-         code = doc["code"].GetInt();
-      }
-      if (doc.HasMember("msg") && doc["msg"].IsString()) {
-         msg = doc["msg"].GetString();
-      }
-      if (code == 200) {
-         if (doc.HasMember("data") && doc["data"].IsObject()) {
-            rapidjson::Value& resp = doc["data"];
-            if (resp.HasMember("permission") && resp["permission"].IsArray()) {
-               rapidjson::Value& permission = resp["permission"];
-               for (int i = 0; i < permission.Size(); i++) {
-                  rapidjson::Value& cur_permission = permission[i];
-                  std::string pemStr = cur_permission.GetString();
-                  if (pemStr == "kick_inav") {
-                     mInavInfo.kick_inav = true;
-                  }
-                  else if (pemStr == "kick_inav_stream") {
-                     mInavInfo.kick_inav_stream = true;
-                  }
-                  else if (pemStr == "publish_inav_another") {
-                     mInavInfo.publish_inav_another = true;
-                  }
-                  else if (pemStr == "apply_inav_publish") {
-                     mInavInfo.apply_inav_publish = true;
-                  }
-                  else if (pemStr == "publish_inav_stream") {
-                     mInavInfo.publish_inav_stream = true;
-                  }
-                  else if (pemStr == "askfor_inav_publish") {
-                     mInavInfo.askfor_inav_publish = true;
-                  }
-                  else if (pemStr == "audit_inav_publish") {
-                     mInavInfo.audit_inav_publish = true;
-                  }
-               }
-               mVHRoomDelegate->OnSuccessedEvent(RoomEvent_GetPermission);
-            }
-         }
-      }
-      else {
-         mVHRoomDelegate->OnFailedEvent(RoomEvent_GetPermission, code, msg);
-      }
+		//if (doc.HasMember("code") && doc["code"].IsInt()) {
+		//	mInavInfo.mCode = doc["code"].GetInt();
+		//}
+
+		//if (doc.HasMember("msg") && doc["msg"].IsString()) {
+		//	mInavInfo.mNoticeMsg = doc["msg"].GetString();
+		//}
+
+			if (doc.HasMember("data") && doc["data"].IsObject()) {
+				rapidjson::Value& resp = doc["data"];
+				//if (resp.HasMember("inav_token") && resp["inav_token"].IsString()) {
+				//	mInavInfo.inav_token = resp["inav_token"].GetString();
+				//}
+
+				if (resp.HasMember("permission") && resp["permission"].IsArray()) {
+					rapidjson::Value& permission = resp["permission"];
+					for (int i = 0; i < permission.Size(); i++) {
+						rapidjson::Value& cur_permission = permission[i];
+						std::string pemStr = cur_permission.GetString();
+						if (pemStr == "kick_inav") {
+							mInavInfo.kick_inav = true;
+						}
+						else if (pemStr == "kick_inav_stream") {
+							mInavInfo.kick_inav_stream = true;
+						}
+						else if (pemStr == "publish_inav_another") {
+							mInavInfo.publish_inav_another = true;
+						}
+						else if (pemStr == "apply_inav_publish") {
+							mInavInfo.apply_inav_publish = true;
+						}
+						else if (pemStr == "publish_inav_stream") {
+							mInavInfo.publish_inav_stream = true;
+						}
+						else if (pemStr == "askfor_inav_publish") {
+							mInavInfo.askfor_inav_publish = true;
+						}
+						else if (pemStr == "audit_inav_publish") {
+							mInavInfo.audit_inav_publish = true;
+						}
+					}
+				}
+
+			}
 	}
 }
 
@@ -633,20 +676,12 @@ void VHPaasRoomImpl::ParamToInavInfoResp(std::string data) {
         if (doc.HasMember("msg") && doc["msg"].IsString()) {
             mInavInfo.mNoticeMsg = doc["msg"].GetString();
         }
-
         if (200 == mInavInfo.mCode) {
             if (doc.HasMember("data") && doc["data"].IsObject()) {
                 rapidjson::Value& resp = doc["data"];
-                LOGE("mInavInfoLock.lock()\n");
-                mInavInfoLock.lock();
-                LOGE("mInavInfoLock.locked\n");
-
                 if (resp.HasMember("inav_token") && resp["inav_token"].IsString()) {
                     mInavInfo.inav_token = resp["inav_token"].GetString();
                 }
-                mInavInfoLock.unlock();
-
-                LOGE("mInavInfoLock.unlock()\n");
                 if (resp.HasMember("pushUrl") && resp["pushUrl"].IsString()) {
                     mInavInfo.push_address = resp["pushUrl"].GetString();
                 }
@@ -691,23 +726,9 @@ void VHPaasRoomImpl::ParamToInavInfoResp(std::string data) {
                     if (log_info.HasMember("ip") && log_info["ip"].IsString()) {
                         mInavInfo.ip = log_info["ip"].GetString();
                     }
-
                     if (log_info.HasMember("third_party_user_id") && log_info["third_party_user_id"].IsString()) {
-                       //string temp = log_info["third_party_user_id"].GetString();
-                       //mInavInfo.third_party_user_id = temp;
-                       // int iId = atoi(mInavInfo.third_party_user_id.c_str());
-                       // int iLength = mInavInfo.third_party_user_id.length();
-
                         mInavInfo.third_party_user_id = log_info["third_party_user_id"].GetString();
-                        LOGE(" RESET third_party_user_id %s \n", mInavInfo.third_party_user_id.c_str());
                     }
-                    else if(log_info.HasMember("third_party_user_id") && log_info["third_party_user_id"].IsInt()) {
-                       char s[64] = { 0 };
-                       itoa(log_info["third_party_user_id"].GetInt(), s,10);
-                       mInavInfo.third_party_user_id = s;
-                       LOGE(" RESET int third_party_user_id %s\n", mInavInfo.third_party_user_id.c_str());
-                    }
-
                     if (log_info.HasMember("account_id") && log_info["account_id"].IsString()) {
                         mInavInfo.account_id = log_info["account_id"].GetString();
                     }
@@ -744,93 +765,41 @@ void VHPaasRoomImpl::ParamToInavInfoResp(std::string data) {
     }
 }
 
-void VHPaasRoomImpl::LogOut() {
+void VHPaasRoomImpl::LogoutRoom() {
     //请求互动房间退出信息
     LOGD("LogoutHVRoom");
-    HTTP_GET_REQUEST httpGet(GetLeaveInavtUrl()/*, "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetLeaveInavtUrl());
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code,const std::string userData)->void {
             ParamRoomEvent(RoomEvent_Logout, data, code, userData);
         });
     }
-
-    if (mpVHWebSocketInterface) {
-       mbDisConnectWebSocket = true;
-       mpVHWebSocketInterface->DisConnectWebSocket();
-       mpVHWebSocketInterface->SyncDisConnectServer();
-    }
 }
 
-void VHPaasRoomImpl::ClearInitInfo()
-{
-   mContext = "";
-   mAccesstoken = "";
-   mAppid = "";
-   mThridUserId = "";
-   mInavRoomId = "";
-   mLiveRoomId = "";
-   mListenChannels.clear();
-
-   //memset(&mInavInfo, 0, sizeof(mInavInfo));
-   mInavInfo.reset();
-   mLoginInfo.log_server = "";
-   mStatic_bThreadRun = false;
-   CThreadLockHandle lockHandle(&mStatic_taskListMutex);
-   mStatic_taskEventList.clear();
-}
-
-bool VHPaasRoomImpl::JoinRTCRoom(std::string userData, bool bEnableSimulCaset
-   ,std::string vid , std::string vfid, std::string strWebinarId, int role, int classType) {
-    LOGD("JoinVHMediaRoom mInavInfo.inav_token ：%s", mInavInfo.inav_token.c_str());
+void VHPaasRoomImpl::JoinRtcRoom(std::string userData) {
+    LOGD("JoinVHMediaRoom");
     bool bRet = false;
-    LOGE("mInavInfoLock.lock()\n");
-    mInavInfoLock.lock();
-    LOGE("mInavInfoLock.locked\n");
-    if (mpWebRtcSDKInterface && mInavInfo.inav_token.length() > 0) {
+    if (mpWebRtcSDKInterface) {
         WebRtcRoomOption option;
+        option.nWebRtcSdkReConnetTime = 10;
         option.strRoomToken = String2WString(mInavInfo.inav_token);
         option.strUserId = String2WString(mInavInfo.third_party_user_id);
-        option.role = role;
-        LOGE("option.strUserId %ws\n", option.strUserId.c_str());
         option.strLogUpLogUrl = String2WString(mLoginInfo.log_server);
         option.strThirdPushStreamUrl = String2WString(mInavInfo.push_address);
         option.strAccountId = String2WString(mInavInfo.account_id);
-
-        option.strPassRoomId = String2WString(mLiveRoomId);//pass_room_id
-        option.strRoomId = String2WString(strWebinarId);
+        option.strRoomId = String2WString(mInavRoomId);
         option.strBusinesstype = L"1";
         option.strappid = String2WString(mAppid);
-        option.strVfid = vfid;
-        option.strVid = vid;
         option.userData = userData;
-        option.classType = classType;
-        mpWebRtcSDKInterface->ConnetWebRtcRoom(option);
-        LOGD("ConnetWebRtcRoom mInavInfo.inav_token.length(): %d  mInavInfo.inav_token: %s", mInavInfo.inav_token.length() ,mInavInfo.inav_token.c_str());
-        mpWebRtcSDKInterface->EnableSimulCast(bEnableSimulCaset);
-        bRet = true;
+        bRet = mpWebRtcSDKInterface->ConnetWebRtcRoom(option);
+        LOGD("ConnetWebRtcRoom :%s", mInavInfo.inav_token.c_str());
     }
-    else {
-
-    }
-
-    mInavInfoLock.unlock();
-    LOGE("mInavInfoLock.unlock()\n");
-    return bRet;
-}
-
-bool VHPaasRoomImpl::isConnetWebRtcRoom()
-{
-   bool bRef = false;
-   if (mpWebRtcSDKInterface) {
-      bRef = mpWebRtcSDKInterface->isConnetWebRtcRoom();
-   }
-   return bRef;
 }
 
 void VHPaasRoomImpl::AsynGetVHRoomMembers() {
     LOGD("AsynGetVHRoomMembers");
     //请求互动房间信息
-    HTTP_GET_REQUEST httpGet(GetInavUserListUrl()/*, "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetInavUserListUrl());
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             LOGD("AnalysisGetInavUserList code:%d", code);
@@ -890,13 +859,13 @@ void VHPaasRoomImpl::AnalysisGetInavUserList(std::string data, int code) {
     }
 
     if (mInavInfo.mCode == 200) {
-        if (mbIsRuning && mVHRoomDelegate) {
-            mVHRoomDelegate->OnGetVHRoomMembers(mInavInfo.mNoticeMsg, memberList);
+        if (mbIsRuning && mpVHRoomMonitor) {
+            mpVHRoomMonitor->OnGetVHRoomMembers(mInavInfo.mNoticeMsg, memberList);
         }
     }
     else {
-        if (mbIsRuning && mVHRoomDelegate) {
-            mVHRoomDelegate->OnFailedEvent(RoomEvent_InavUserList, mInavInfo.mCode, mInavInfo.mNoticeMsg);
+        if (mbIsRuning && mpVHRoomMonitor) {
+            mpVHRoomMonitor->OnFailedEvent(RoomEvent_InavUserList, mInavInfo.mCode, mInavInfo.mNoticeMsg);
         }
     }
 }
@@ -940,13 +909,13 @@ void VHPaasRoomImpl::AnalysisGetKickOutInavUserList(std::string data, int code) 
     }
 
     if (mInavInfo.mCode == 200) {
-        if (mbIsRuning && mVHRoomDelegate) {
-            mVHRoomDelegate->OnGetVHRoomKickOutMembers(memberList);
+        if (mbIsRuning && mpVHRoomMonitor) {
+            mpVHRoomMonitor->OnGetVHRoomKickOutMembers(memberList);
         }
     }
     else {
-        if (mbIsRuning && mVHRoomDelegate) {
-            mVHRoomDelegate->OnFailedEvent(RoomEvent_GetKickInavList, mInavInfo.mCode, mInavInfo.mNoticeMsg);
+        if (mbIsRuning && mpVHRoomMonitor) {
+            mpVHRoomMonitor->OnFailedEvent(RoomEvent_GetKickInavList, mInavInfo.mCode, mInavInfo.mNoticeMsg);
         }
     }
 }
@@ -954,41 +923,14 @@ void VHPaasRoomImpl::AnalysisGetKickOutInavUserList(std::string data, int code) 
 /*
 * 退出房间
 */
-bool VHPaasRoomImpl::LeaveRTCRoom() {
+bool VHPaasRoomImpl::LeaveRtcRoom() {
     LOGD("DisConnetVHMediaRoom");
     bool bRet = false;
     if (mpWebRtcSDKInterface) {
         bRet = mpWebRtcSDKInterface->DisConnetWebRtcRoom();
     }
     return bRet;
-}
-void VHPaasRoomImpl::DisableSubScribeStream()
-{
-   LOGD("start");
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->DisableSubScribeStream();
-   }
-
-   LOGD("end");
-}
-void VHPaasRoomImpl::EnableSubScribeStream()
-{
-   LOGD("start");
-   if ( mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->EnableSubScribeStream();
-   }
-   LOGD("end");
-}
-
-
-bool VHPaasRoomImpl::IsWebRtcRoomConnected() {
-   LOGD("IsWebRtcRoomConnected");
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->IsWebRtcRoomConnected();
-   }
-   return bRet;
-}
+} 
 
 int VHPaasRoomImpl::ApplyInavPublish() {
     LOGD("ApplyInavPublish");
@@ -996,7 +938,7 @@ int VHPaasRoomImpl::ApplyInavPublish() {
         return VhallLive_NO_PERMISSION;
     }
     //请求互动房间信息
-    HTTP_GET_REQUEST httpGet(GetApplyInavPublishUrl()/*, "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetApplyInavPublishUrl());
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code,const std::string userData)->void {
             ParamRoomEvent(RoomEvent_Apply_Push, data, code, userData);
@@ -1027,7 +969,7 @@ int VHPaasRoomImpl::AuditInavPublish(const std::string& audit_user_id, AuditPubl
     std::string data = buffer.GetString();
 
 
-    HTTP_GET_REQUEST httpGet(GetAuditInavPublishUrl(audit_user_id, type)/*, data, bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetAuditInavPublishUrl(audit_user_id, type), data);
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             ParamRoomEvent(RoomEvent_AuditInavPublish, data, code, userData );
@@ -1055,7 +997,7 @@ int VHPaasRoomImpl::AskforInavPublish(const std::string& audit_user_id) {
     document.Accept(writer);
     std::string data = buffer.GetString();
 
-    HTTP_GET_REQUEST httpGet(GetAskforInavPublishUrl(audit_user_id)/*, data,bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetAskforInavPublishUrl(audit_user_id), data);
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             ParamRoomEvent(RoomEvent_AskforInavPublish, data, code, userData);
@@ -1081,7 +1023,7 @@ void VHPaasRoomImpl::UserPublishCallback(PushStreamEvent type, const std::string
     document.Accept(writer);
     std::string data = buffer.GetString();
 
-    HTTP_GET_REQUEST httpGet(GetUserPublishCallbackUrl(stream_id, type)/*, data, bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetUserPublishCallbackUrl(stream_id, type), data);
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             ParamRoomEvent(RoomEvent_UserPublishCallback, data, code, userData);
@@ -1110,7 +1052,7 @@ int VHPaasRoomImpl::KickInavStream(const std::string& kick_user_id, KickStream t
     document.Accept(writer);
     std::string data = buffer.GetString();
 
-    HTTP_GET_REQUEST httpGet(GetKickInavStreamUrl(kick_user_id, type)/*, data, bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetKickInavStreamUrl(kick_user_id, type), data);
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             ParamRoomEvent(RoomEvent_KickInavStream, data, code, userData);
@@ -1140,7 +1082,7 @@ int VHPaasRoomImpl::KickInav(const std::string& kick_user_id, KickStream type) {
     document.Accept(writer);
     std::string data = buffer.GetString();
 
-    HTTP_GET_REQUEST httpGet(GetKickInavUrl(kick_user_id, type)/*, data, bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetKickInavUrl(kick_user_id, type), data);
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             ParamRoomEvent(RoomEvent_KickInav, data, code, userData);
@@ -1151,7 +1093,7 @@ int VHPaasRoomImpl::KickInav(const std::string& kick_user_id, KickStream type) {
 
 void VHPaasRoomImpl::GetKickInavList() {
     LOGD("GetKickInavList");
-    HTTP_GET_REQUEST httpGet(GetKickInavListUrl()/*,"", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetKickInavListUrl());
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             AnalysisGetKickOutInavUserList(data, code);
@@ -1160,105 +1102,44 @@ void VHPaasRoomImpl::GetKickInavList() {
 }
 
 /*
-*   开启旁路直播 StartPublishInavAnother
+*   开启旁路直播
+*   live_room_id: 直播房间id
+*   width： 混流端布局的宽
+*   height： 混流端布局的高
+*   fps：帧率
+*   bitrate： 码率
+*   stream_id： 大画面流id
 */
-int VHPaasRoomImpl::StartConfigBroadCast(LayoutMode layoutMode, BroadCastVideoProfileIndex profileIndex,
-   bool showBorder, std::string boradColor, std::string backGroundColor, 
-   SetBroadCastEventCallback fun /*= nullptr*/) {
+int VHPaasRoomImpl::StartPublishInavAnother(std::string live_room_id, LayoutMode layoutMode, BroadCastVideoProfileIndex profileIndex, bool showBorder /*= true*/, std::string boradColor /*= std::string("0x666666")*/, std::string backGroundColor/* = std::string("0x000000")*/) {
     LOGD("");
-    int bRet = VhallLive_NO_PERMISSION;
     if (!mInavInfo.publish_inav_another) {
         LOGD("no permission ");
-        return bRet;
+        return VhallLive_NO_PERMISSION;
     }
-    
-    //RtcSDKEventDelegate *obj = mRtcDelegate;
-    /*int*/ 
-    bRet = mpWebRtcSDKInterface->StartConfigBroadCast(layoutMode, profileIndex, 
-       showBorder, boradColor, backGroundColor, fun
-    //   [&, obj, layoutMode, profileIndex, fun ](const std::string& result, const std::string& msg)->void {
-    //   LOGD("OnStartPublishInavAnother result:%s msg:%s", result.c_str(), msg.c_str());
-    //   //if (obj) {
-    //   //   obj->OnConfigBroadCast(layoutMode, profileIndex, result, msg);
-    //   //}
-    //   if (fun) {
-    //      fun(result.c_str(), msg.c_str());//此处成功 通知pass 服务  GetPublishInavAnotherWithParam 接口
-    //       //VHPaasRoomImpl* processer = this;
-    //      ////先调用api,成功之后再调用底层接口。
-    //      //HTTP_GET_REQUEST httpGet(GetPublishInavAnotherWithParam(mLiveRoomId, 1)/*, "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
-    //      //if (mpHttpManagerInterface) {
-    //      //    mpHttpManagerInterface->HttpGetRequest(httpGet, [&, processer, layoutMode, profileIndex, showBorder, boradColor, backGroundColor](std::string data, int code, const std::string userData)->void {
-    //      //        LOGD("data:%s", data.c_str());
-    //      //        if (processer) {
-    //      //           OnStartPublishInavAnother(code, data, layoutMode, profileIndex, showBorder, boradColor, backGroundColor);
-    //      //        }
-    //      //    });
-    //      //}  
-    //   }
-    //}
-    );
-    //if (bRet != VhallLive_OK) {
-    //   mRtcDelegate->OnConfigBroadCast(layoutMode, profileIndex, RTC_FAILED, msg);
-    //}
+
+    int bRet = VhallLive_OK;
+    if (mpWebRtcSDKInterface) {
+        LOGD("live_room_id:%s layoutMode:%d  profileIndex:%d", live_room_id.c_str(), layoutMode, profileIndex);
+        mCurrentBroadCastInfo.live_room_id = live_room_id;
+        mCurrentBroadCastInfo.layoutMode = layoutMode;
+        mCurrentBroadCastInfo.profileIndex = profileIndex;
+        mCurrentBroadCastInfo.showBorder = showBorder;
+        mCurrentBroadCastInfo.boradColor = boradColor;
+        mCurrentBroadCastInfo.backGroundColor = backGroundColor;
+        VHPaasRoomImpl *obj = this;
+        //api状态上报,通知paas 接口开启旁路
+        HTTP_GET_REQUEST httpGet(GetPushAnotherConfig(1));
+        if (mpHttpManagerInterface) {
+           mpHttpManagerInterface->HttpGetRequest(httpGet, [&, obj](std::string data, int code, const std::string userData)->void {
+              LOGD("data:%s", data.c_str());
+              if (obj) {
+                 obj->ParamRoomEvent(RoomEvent_Start_PublishInavAnother,data, code,"");
+              }
+           });
+        }
+    }
     return bRet;
 }
-
-void VHPaasRoomImpl::GetPublishInavAnotherWithParam()
-{
-   HTTP_GET_REQUEST httpGet(GetPublishInavAnotherWithParam(mLiveRoomId, 1)/*, "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
-         if (mpHttpManagerInterface) {
-             mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
-                 LOGD("data:%s", data.c_str());
-                 //if (processer) {
-                 //   OnStartPublishInavAnother(code, data, layoutMode, profileIndex, showBorder, boradColor, backGroundColor);
-                 //}
-             });
-         }  
-}
-//void VHPaasRoomImpl::OnStartPublishInavAnother(int error_code, std::string res_msg, LayoutMode layoutMode, BroadCastVideoProfileIndex profileIndex, bool showBorder, std::string boradColor, std::string backGroundColor) {
-//   if (mpWebRtcSDKInterface) {
-//      LOGD("layoutMode:%d  profileIndex:%d", layoutMode, profileIndex);
-//      int codeNum = 0;
-//      string msg = "http send err";
-//      rapidjson::Document doc;
-//      doc.Parse<0>(res_msg.c_str());
-//      if (doc.HasParseError()) {
-//         LOGE("VHTokenRespMsg ParseError%d\n", doc.GetParseError());
-//         if (mbIsRuning && mRtcDelegate) {
-//            mRtcDelegate->OnConfigBroadCast(layoutMode, profileIndex, RTC_FAILED, msg);
-//         }
-//         return;
-//      }
-//
-//      if (doc.IsObject()) {
-//         if (doc.HasMember("code") && doc["code"].IsInt()) {
-//            codeNum = doc["code"].GetInt();
-//         }
-//         if (doc.HasMember("msg") && doc["msg"].IsString()) {
-//            msg = doc["msg"].GetString();
-//         }
-//      }
-//
-//      if (codeNum == 200) {
-//         RtcSDKEventDelegate *obj = mRtcDelegate;
-//         int bRet = mpWebRtcSDKInterface->StartConfigBroadCast(layoutMode, profileIndex, showBorder, boradColor, backGroundColor,
-//            [&, obj, layoutMode, profileIndex](const std::string& result, const std::string& msg)->void {
-//            LOGD("OnStartPublishInavAnother result:%s msg:%s", result.c_str(), msg.c_str());
-//            if (obj) {
-//               obj->OnConfigBroadCast(layoutMode, profileIndex, result, msg);
-//            }
-//         });
-//         if (bRet != VhallLive_OK) {
-//            mRtcDelegate->OnConfigBroadCast(layoutMode, profileIndex, RTC_FAILED, msg);
-//         }
-//      }
-//      else {
-//         if (mbIsRuning && mRtcDelegate) {
-//            mRtcDelegate->OnConfigBroadCast(layoutMode, profileIndex, RTC_FAILED, msg);
-//         }
-//      }
-//   }
-//}
 
 /**
 *   获取流ID
@@ -1271,23 +1152,7 @@ std::string VHPaasRoomImpl::GetUserStreamID(const std::wstring user_id, VHStream
     return mpWebRtcSDKInterface->GetUserStreamID(user_id, streamType);
 }
 
-int VHPaasRoomImpl::SetConfigBroadCastLayOut(LayoutMode mode, SetBroadCastEventCallback fun)
-{
-   int bRet = VhallLive_NO_OBJ;
-   if (mpWebRtcSDKInterface) {
-      if (!mpWebRtcSDKInterface->IsEnableConfigMixStream()) {
-         LOGD("VhallLive_SERVER_NOT_READY");
-         bRet = vlive::VhallLive_SERVER_NOT_READY;
-      }
-      else {
-         bRet = mpWebRtcSDKInterface->SetConfigBroadCastLayOut(mode, fun);
-      }
-   }
-   return bRet;
-}
-
-int VHPaasRoomImpl::SetMainView(std::string stream_id/*,int stream_type*/, SetBroadCastEventCallback fun/* = nullptr*/) {
-   int bRet;
+int VHPaasRoomImpl::SetMainView(std::string stream_id) {
     LOGD("stream_id %s", stream_id.c_str());
     if (!mInavInfo.publish_inav_another) {
         LOGD("no permission ");
@@ -1304,425 +1169,64 @@ int VHPaasRoomImpl::SetMainView(std::string stream_id/*,int stream_type*/, SetBr
         LOGD("VhallLive_SERVER_NOT_READY");
         return vlive::VhallLive_SERVER_NOT_READY;
     }
-    //WebRtcSDKEventInterface*obj = mRtcDelegate;
-    bRet = mpWebRtcSDKInterface->SetMixLayoutMainView(stream_id, fun);
-
-    //if (bRet != VhallLive_OK) {
-    //   if (obj) {
-    //      obj->OnSetMainView(stream_id, stream_type, RTC_FAILED, RTC_FAILED);
-    //   }
-    //}
+    int bRet = mpWebRtcSDKInterface->SetMixLayoutMainView(stream_id,
+        [&](const std::string& result, const std::string& msg, int errorCode)->void {
+        LOGD("StartConfigBroadCast result:%s msg:%s", result.c_str(), msg.c_str());
+        //如果设置布局成功
+        if (result.compare("success") == 0) {
+            if (mbIsRuning && mpVHRoomMonitor) {
+                LOGD("msg:%s", msg.c_str());
+                mpVHRoomMonitor->OnSuccessedEvent(RoomEvent_SetMainView, result);
+            }
+        }
+        else {
+            if (mbIsRuning && mpVHRoomMonitor) {
+                LOGD("msg:%s", msg.c_str());
+                mpVHRoomMonitor->OnFailedEvent(RoomEvent_SetMainView, -1, msg);
+            }
+        }
+    }); 
     return bRet;
 }
 
 /*
  *  接口说明：开启旁路直播后，可通过此接口修复混流布局
  */
-//int VHPaasRoomImpl::ChangeLayout(LayoutMode layoutMode, std::string custom) {
-//   int bRet = VhallLive_OK;
-//    //if (!mInavInfo.publish_inav_another) {
-//    //    LOGD("no permission ");
-//    //    return VhallLive_NO_PERMISSION;
-//    //}
-//    ////HTTP_GET_REQUEST httpGet(GetSetLayOut(layoutMode, custom), layoutMode, bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName);
-//    ////if (mpHttpManagerInterface) {
-//    ////    mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
-//    ////        LOGD("data:%s", data.c_str());
-//    ////        ParamRoomEvent(RoomEvent_SetLayOut, data, code, userData);
-//    ////    });
-//    ////}
-//    //
-//    //if (mpWebRtcSDKInterface) {
-//    //   LOGD("layoutMode:%d", layoutMode);
-//    //   RtcSDKEventDelegate *obj = mRtcDelegate;
-//    //   bRet = mpWebRtcSDKInterface->SetConfigBroadCastLayOut(layoutMode, [&, obj, layoutMode](const std::string& result, const std::string& msg)->void {
-//    //      LOGD("StartConfigBroadCast result:%s msg:%s", result.c_str(), msg.c_str());
-//    //      if (obj) {
-//    //         obj->OnChangeConfigBroadCastLayout(layoutMode, result, msg);
-//    //      }
-//    //   });
-//    //   if (bRet != VhallLive_OK) {
-//    //      if (obj) {
-//    //         obj->OnChangeConfigBroadCastLayout(layoutMode, RTC_FAILED, "");
-//    //      }
-//    //   }
-//    //}
-//    return bRet;
-//}
-
-/*
-*   停止旁路直播
-*   live_room_id: 直播房间id
-*/
-int VHPaasRoomImpl::StopPublishInavAnother() {
+int VHPaasRoomImpl::ChangeLayout(std::string layoutMode, std::string custom) {
+    return 0;
     if (!mInavInfo.publish_inav_another) {
         LOGD("no permission ");
         return VhallLive_NO_PERMISSION;
     }
-    //api状态上报
-    VHPaasRoomImpl* processer = this;
-    HTTP_GET_REQUEST httpGet(GetPushAnotherConfig(2));
+    HTTP_GET_REQUEST httpGet(GetSetLayOut(layoutMode, custom), layoutMode);
     if (mpHttpManagerInterface) {
-        mpHttpManagerInterface->HttpGetRequest(httpGet, [&, processer](std::string data, int code, const std::string userData)->void {
+        mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             LOGD("data:%s", data.c_str());
-            if (processer) {
-               processer->OnStopPublishInavAnother(code, data);
-            }
+            ParamRoomEvent(RoomEvent_SetLayOut, data, code, userData);
         });
     }
     return 0;
 }
 
-void VHPaasRoomImpl::implementTask(int iTask)
-{
-   LOGD("data:%s", __FUNCTION__);
-   CPaasTaskEvent task;
-   task.mEventType = iTask;
-
-   PostTaskEvent(task);
-}
-
-bool VHPaasRoomImpl::IsEnableConfigMixStream()
-{
-   bool bEnabele = false;
-   if (mpWebRtcSDKInterface) {
-      bEnabele = mpWebRtcSDKInterface->IsEnableConfigMixStream();
-   }
-   
-   return bEnabele;
-}
-
-void VHPaasRoomImpl::SetEnableConfigMixStream(bool enable)
-{
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->SetEnableConfigMixStream(false);
-   }
-}
-
-DWORD __stdcall VHPaasRoomImpl::ThreadProcess(LPVOID p)
-{
-   LOGD("ThreadProcess");
-   while (mStatic_bThreadRun) {
-      if (mStatic_TaskEvent) {
-         DWORD ret = WaitForSingleObject(mStatic_TaskEvent, 2000);
-         if (p) {
-            VHPaasRoomImpl* sdk = (VHPaasRoomImpl*)(p);
-            if (sdk) {
-               sdk->ProcessTask();
-            }
-         }
-      }
-   }
-
-   if (mStatic_ThreadExitEvent) {
-      ::SetEvent(mStatic_ThreadExitEvent);
-   }
-
-   LOGD("exit ThreadProcess");
-   return 0;
-}
-
-void VHPaasRoomImpl::ProcessTask()
-{
-   CPaasTaskEvent event;
-   {
-      CThreadLockHandle lockHandle(&mStatic_taskListMutex);
-      if (mStatic_taskEventList.size() > 0) {
-         event = mStatic_taskEventList.front();
-         mStatic_taskEventList.pop_front();
-      }
-      else {
-         return;
-      }
-   }
-
-   switch (event.mEventType)
-   {
-   case eTask_BroadCast: {
-      GetPublishInavAnotherWithParam();
-      break;
-   }
-   default:; break;
-   }
-
-}
-
-bool VHPaasRoomImpl::IsSupportMediaFormat(CaptureStreamAVType type)
-{
-   LOGD("enter type:%d", type);
-   if (mpWebRtcSDKInterface) {
-      return mpWebRtcSDKInterface->IsSupportMediaFormat(type);
-   }
-   return false;
-}
-
-void VHPaasRoomImpl::PostTaskEvent(CPaasTaskEvent task) {
-   if (mStatic_bThreadRun) {
-      CThreadLockHandle lockHandle(&mStatic_taskListMutex);
-      mStatic_taskEventList.push_back(task);
-      if (mStatic_TaskEvent) {
-         ::SetEvent(mStatic_TaskEvent);
-      }
-   }
-}
-
-std::string VHPaasRoomImpl::GetLocalAuxiliaryId()
-{
-   std::string strRef;
-   if ( mpWebRtcSDKInterface) {
-      strRef = mpWebRtcSDKInterface->GetLocalAuxiliaryId();
-   }
-
-   return strRef;
-}
-
-std::string VHPaasRoomImpl::GetAuxiliaryId()
-{
-   std::string strRef;
-   if (mpWebRtcSDKInterface)
-   {
-      strRef = mpWebRtcSDKInterface->GetAuxiliaryId();
-   }
-   return strRef;
-}
-
-VHStreamType VHPaasRoomImpl::CalcStreamType(const bool & bAudio, const bool & bVedio)
-{
-   VHStreamType eRef = VHStreamType_Count;
-   if (mpWebRtcSDKInterface) {
-      eRef = mpWebRtcSDKInterface->CalcStreamType(bAudio, bVedio);
-   }
-
-   return eRef;
-}
-
-int VHPaasRoomImpl::SetLocalCapturePlayerVolume(const int volume)
-{
-   int iRef = VhallLive_ERROR;
-   if (mpWebRtcSDKInterface)
-   {
-      iRef = mpWebRtcSDKInterface->SetLocalCapturePlayerVolume(volume);
-   }
-   return iRef;
-}
-
-int VHPaasRoomImpl::StopPlayAudioFile()
-{
-   int nRet = VhallLive_NO_OBJ;
-   if (mpWebRtcSDKInterface)
-   {
-      nRet = mpWebRtcSDKInterface->StopPlayAudioFile();
-   }
-   return nRet;
-}
-
-int VHPaasRoomImpl::GetPlayAudioFileVolum()
-{
-   int nRet = VhallLive_NO_OBJ;
-   if (mpWebRtcSDKInterface)
-   {
-      nRet = mpWebRtcSDKInterface->GetPlayAudioFileVolum();
-   }
-   return nRet;
-}
-
-int VHPaasRoomImpl::PlayAudioFile(std::string fileName, int devIndex)
-{
-   int nRet = VhallLive_NO_OBJ;
-   if (mpWebRtcSDKInterface)
-   {
-      nRet = mpWebRtcSDKInterface->PlayAudioFile(fileName, devIndex);
-   }
-   return nRet;
-}
-
-int VHPaasRoomImpl::ChangeNextCamera(VideoProfileIndex videoProfile)
-{
-   LOGD(" enter ");
-   if (mpWebRtcSDKInterface) {
-      std::list<vhall::VideoDevProperty> mCameraList;
-      mpWebRtcSDKInterface->GetCameraDevices(mCameraList);
-      int index = 0;
-      std::string devId;
-      mpWebRtcSDKInterface->GetCurrentMic(index, devId);
-
-      //只有一个摄像头或者没有，不进行切换。
-      if (mCameraList.size() == 0 || mCameraList.size() == 1) {
-         LOGD(" only on return ");
-         return -1;
-      }
-      std::string curCamerDevId;
-      std::wstring playerCaptureId = mpWebRtcSDKInterface->GetCurrentDesktopPlayCaptureId();
-      mpWebRtcSDKInterface->GetCurrentCamera(curCamerDevId);
-      //当选中的摄像头还有下一个设备，则切换。
-      int nCheckCount = 1;
-      std::list<vhall::VideoDevProperty>::iterator iter = mCameraList.begin();
-
-      LOGD("  The num of Camera is %d", mCameraList.size());
-      while (iter != mCameraList.end()) {
-         vhall::VideoDevProperty dev = *iter;
-         LOGD("  The cur index of Camera is %d", nCheckCount);
-         if (dev.mDevId == curCamerDevId || curCamerDevId.length() == 0) {
-            //找到当前正在使用的摄像头。
-            //1:如果还有下一个，则切换；
-            if (nCheckCount < mCameraList.size() && iter->mDevId.size() > 0) {
-               iter++;
-               if (iter != mCameraList.end())
-               {
-                  vhall::VideoDevProperty nexDev = *iter;
-                  StopLocalCapture();
-                  mpWebRtcSDKInterface->SetUsedMic(index, devId, playerCaptureId);
-                  mpWebRtcSDKInterface->StartLocalCapture(nexDev.mDevId, videoProfile, true);
-               }
-               else{
-                  return 0;
-               }
-               //return ;
-            }
-            //2:已经是最后一个,选取第一个；
-            else if (nCheckCount == mCameraList.size()) {
-               iter = mCameraList.begin();
-               if (iter->mDevId.size() > 0) {
-                  vhall::VideoDevProperty nexDev = *iter;
-                  StopLocalCapture();
-                  mpWebRtcSDKInterface->SetUsedMic(index, devId, playerCaptureId);
-                  mpWebRtcSDKInterface->StartLocalCapture(nexDev.mDevId, videoProfile, true);
-                  //return;
-               }
-            }
-         }
-         nCheckCount++;
-         iter++;
-      }
-
-
-   }
-   LOGD(" leave ");
-   return 0;
-}
-
-void VHPaasRoomImpl::GetCurrentCamera(std::string & devId)
-{
-   LOGD("enter devId:%s", devId.c_str());
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->GetCurrentCamera(devId);
-   }
-}
-
-void VHPaasRoomImpl::GetCurrentMic(int & index, std::string & devId)
-{
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->GetCurrentMic(index, devId);
-      LOGD("enter index:%d", index);
-   }
-}
-
-bool VHPaasRoomImpl::GetMuteAllAudio()
-{
-   bool bRef = false;
-   if (mpWebRtcSDKInterface) {
-      bRef = mpWebRtcSDKInterface->GetMuteAllAudio();
-   }
-   return bRef;
-}
-
-int VHPaasRoomImpl::SetUsedMic(int index, std::string devId, std::wstring desktopCaptureId)
-{
-   LOGD("enter index:%d", index);
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->SetUsedMic(index, devId, desktopCaptureId);
-   }
-   return 0;
-}
-
-bool VHPaasRoomImpl::StopRenderRemoteStream(const std::wstring & user, const std::string streamId, vlive::VHStreamType streamType)
-{
-   LOGD("enter user:%ws streamType:%d", user.c_str(), streamType);
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->StopRenderRemoteStream(user, streamId, streamType);
-   }
-   return bRet;
-}
-
-bool VHPaasRoomImpl::StartRenderRemoteStreamByInterface(const std::wstring & user, vlive::VHStreamType streamType, std::shared_ptr<vhall::VideoRenderReceiveInterface> receive)
-{
-   LOGD("enter user:%ws streamType:%d", user.c_str(), streamType);
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->StartRenderRemoteStreamByInterface(user, streamType, receive);
-   }
-   return bRet;
-}
-
-bool VHPaasRoomImpl::IsRemoteStreamIsExist(const std::wstring & user, vlive::VHStreamType streamType)
-{
-   LOGD("enter %s  streamType:%d", __FUNCTION__, streamType/*, receive, receive*/);
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->IsRemoteStreamIsExist(user, streamType);
-   }
-   return bRet;
-}
-
-int VHPaasRoomImpl::GetSubScribeStreamFormat(const std::wstring & user, vlive::VHStreamType streamType, bool & hasVideo, bool & hasAudio)
-{
-   LOGD("enter  streamType:%d", streamType);
-   if (mpWebRtcSDKInterface) {
-      return mpWebRtcSDKInterface->GetSubScribeStreamFormat(user, streamType, hasVideo, hasAudio);
-   }
-   LOGD("end streamType:%d", streamType);
-   return -1;
-}
-
-double VHPaasRoomImpl::GetPushDesktopVideoLostRate()
-{
-   double dRef = 0.0;
-   LOGD("enter  ");
-   if (mpWebRtcSDKInterface) {
-      dRef =  mpWebRtcSDKInterface->GetPushDesktopVideoLostRate();
-   }
-   LOGD("end");
-   return dRef;
-}
-
-void VHPaasRoomImpl::OnStopPublishInavAnother(int error_code, std::string res_msg) {
-   /*if (mpWebRtcSDKInterface) {
-      LOGD("error_code:%d  res_msg:%s", error_code, res_msg.c_str());
-      int codeNum = 0;
-      string msg = "http send err";
-      rapidjson::Document doc;
-      doc.Parse<0>(res_msg.c_str());
-      if (doc.HasParseError()) {
-         LOGE("VHTokenRespMsg ParseError%d\n", doc.GetParseError());
-         if (mbIsRuning && mRtcDelegate) {
-            mRtcDelegate->OnStopConfigBroadCast(RTC_FAILED, msg);
-         }
-         return;
-      }
-      if (doc.IsObject()) {
-         if (doc.HasMember("code") && doc["code"].IsInt()) {
-            codeNum = doc["code"].GetInt();
-         }
-         if (doc.HasMember("msg") && doc["msg"].IsString()) {
-            msg = doc["msg"].GetString();
-         }
-      }
-      if (codeNum == 200) {
-         WebRtcSDKEventInterface *obj = mRtcDelegate;
-         int bRet = mpWebRtcSDKInterface->StopBroadCast([&, obj](const std::string& result, const std::string& msg)->void {
-            LOGD("OnStartPublishInavAnother result:%s msg:%s", result.c_str(), msg.c_str());
-            if (obj) {
-               obj->OnStopConfigBroadCast(result, msg);
-            }
-         });
-      }
-      else {
-         if (mbIsRuning && mRtcDelegate) {
-            mRtcDelegate->OnStopConfigBroadCast(RTC_FAILED, msg);
-         }
-      }
-   }*/
+/*
+*   停止旁路直播
+*   live_room_id: 直播房间id
+*/
+int VHPaasRoomImpl::StopPublishInavAnother(std::string live_room_id) {
+    if (!mInavInfo.publish_inav_another) {
+        LOGD("no permission ");
+        return VhallLive_NO_PERMISSION;
+    }
+    //api状态上报
+    mLiveRoomId = live_room_id;
+    HTTP_GET_REQUEST httpGet(GetPushAnotherConfig(2));
+    if (mpHttpManagerInterface) {
+        mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
+            LOGD("data:%s", data.c_str());
+            ParamRoomEvent(RoomEvent_Stop_PublishInavAnother, data, code, userData/* user_id, processType*/);
+        });
+    }
+    return 0;
 }
 
 bool VHPaasRoomImpl::ParamRoomEvent(RoomEvent event, std::string data, int code, std::string userData) {
@@ -1733,8 +1237,8 @@ bool VHPaasRoomImpl::ParamRoomEvent(RoomEvent event, std::string data, int code,
     doc.Parse<0>(data.c_str());
     if (doc.HasParseError()) {
         LOGE("VHTokenRespMsg ParseError%d\n", doc.GetParseError());
-        if (mbIsRuning && mVHRoomDelegate) {
-            mVHRoomDelegate->OnFailedEvent(event, codeNum, msg, userData);
+        if (mbIsRuning && mpVHRoomMonitor) {
+            mpVHRoomMonitor->OnFailedEvent(event, codeNum, msg);
         }
         return false;
     }
@@ -1747,32 +1251,46 @@ bool VHPaasRoomImpl::ParamRoomEvent(RoomEvent event, std::string data, int code,
         }
     }
     if (codeNum == 200) {
-		if (event == RoomEvent_Logout) {
-         mbDisConnectWebSocket = true;
-			mpVHWebSocketInterface->DisConnectWebSocket();
-			mpVHWebSocketInterface->SyncDisConnectServer();
-		}
-        if (mbIsRuning && mVHRoomDelegate) {
-            mVHRoomDelegate->OnSuccessedEvent(event, userData);
-        }
-        if (event == RoomEvent_Logout) {
-            if (mpVHWebSocketInterface) {
-                mbDisConnectWebSocket = true;
-                mpVHWebSocketInterface->DisConnectWebSocket();
-                mpVHWebSocketInterface->SyncDisConnectServer();
-            }
-        }
-        return true;
+      if (mbIsRuning && mpVHRoomMonitor) {
+         if (event == RoomEvent_Start_PublishInavAnother) {
+            VHPaasRoomImpl *obj = this;
+            int bRet = mpWebRtcSDKInterface->StartConfigBroadCast(mCurrentBroadCastInfo.layoutMode, mCurrentBroadCastInfo.profileIndex, mCurrentBroadCastInfo.showBorder, mCurrentBroadCastInfo.boradColor, mCurrentBroadCastInfo.backGroundColor,
+               [&, obj](const std::string& result, const std::string& msg, int errorCode)->void {
+               LOGD("StartConfigBroadCast result:%s msg:%s", result.c_str(), msg.c_str());
+               if (obj) {
+                  obj->SetBroadCastCallBackWithParam(result, msg);
+               }
+            });
+         }
+         if (event == RoomEvent_Stop_PublishInavAnother) {
+            mpWebRtcSDKInterface->StopBroadCast([&](const std::string&, const std::string&, int errorCode){
+
+            });
+         }
+         else {
+            mpVHRoomMonitor->OnSuccessedEvent(event, userData);
+         }
+
+      }
+      if (event == RoomEvent_Logout) {
+         if (mpVHWebSocketInterface) {
+            SendServerLeaveMsg(mContext);
+            mpVHWebSocketInterface->DisConnectWebSocket();
+            mpVHWebSocketInterface->SyncDisConnectServer();
+            mbLoginDone = false;
+         }
+      }
+      return true;
     }
     else {
-        if (mbIsRuning && mVHRoomDelegate) {
-            mVHRoomDelegate->OnFailedEvent(event, codeNum, msg, userData);
+        if (mbIsRuning && mpVHRoomMonitor) {
+            mpVHRoomMonitor->OnFailedEvent(event, codeNum, msg);
         }
     }
     return false;
 }
 
-void VHPaasRoomImpl::CheckPermission(VHStreamType streamType, std::string data, int code, std::string context) {
+void VHPaasRoomImpl::CheckPermission(VHStreamType streamType, std::string data, int code) {
     LOGD("ParamRoomEvent data:%s code:%d ", data.c_str(), code);
     int codeNum = code;
     string msg = "no define";
@@ -1807,7 +1325,7 @@ void VHPaasRoomImpl::CheckPermission(VHStreamType streamType, std::string data, 
                         break;
                     case VHStreamType_Desktop:
                         if (mpWebRtcSDKInterface) {
-                            mpWebRtcSDKInterface->StartPushDesktopStream(context);
+                            mpWebRtcSDKInterface->StartPushDesktopStream();
                         }
                         break;
                     case VHStreamType_MediaFile:
@@ -1823,8 +1341,8 @@ void VHPaasRoomImpl::CheckPermission(VHStreamType streamType, std::string data, 
 
                 }
                 else {
-                    if (mbIsRuning && mVHRoomDelegate) {
-                       mRtcDelegate->OnPushStreamError("", streamType, permission, "no permission");
+                    if (mbIsRuning && mpRtcRoomDelegate) {
+                       mpRtcRoomDelegate->OnPushStreamError(streamType, permission, "no permission");
                     }
                 }
             }
@@ -1832,15 +1350,15 @@ void VHPaasRoomImpl::CheckPermission(VHStreamType streamType, std::string data, 
         }
     }
     else {
-        if (mbIsRuning && mVHRoomDelegate) {
-           mRtcDelegate->OnPushStreamError("", streamType, codeNum, msg);
+        if (mbIsRuning && mpRtcRoomDelegate) {
+           mpRtcRoomDelegate->OnPushStreamError(streamType, codeNum, msg);
         }
     }
 }
 
 void VHPaasRoomImpl::ParamRecvSocketMsg(const std::string msg) {
-    if (mbIsRuning && mMsgDelegate) {
-       mMsgDelegate->OnRecvMsgEvent(msg);
+    if (mbIsRuning && mpVHRoomMonitor) {
+        mpVHRoomMonitor->OnRecvSocketIOMsg(SocketIOMsgType_None, msg);
     }
 }
 
@@ -1863,12 +1381,13 @@ void VHPaasRoomImpl::ParamRecvInavMsg(const std::string data) {
                 //rapidjson::Value& resp = dataObj["data"];
                 if (resp.HasMember("inav_event") && resp["inav_event"].IsString()) {
                     std::string inav_event = resp["inav_event"].GetString();
-                    if (mbIsRuning && mVHRoomDelegate) {
+                    if (mbIsRuning && mpVHRoomMonitor) {
                         if (inav_event.compare("apply_inav_publish") == 0) {
                             if (resp.HasMember("third_party_user_id") && resp["third_party_user_id"].IsString()) {
                                 std::string third_party_user_id = resp["third_party_user_id"].GetString();
                                 LOGD("mInavInfo.apply_inav_publish");
-                                mVHRoomDelegate->OnRecvBaseApplyInavPublishMsg(String2WString(third_party_user_id));
+                                std::wstring thirdUid =  String2WString(third_party_user_id);
+                                mpVHRoomMonitor->OnRecvApplyInavPublishMsg(thirdUid);
                             }
                         }
                         else if (inav_event.compare("audit_inav_publish") == 0) {
@@ -1882,33 +1401,33 @@ void VHPaasRoomImpl::ParamRecvInavMsg(const std::string data) {
                                 char s[64] = { 0 };
                                 memcpy(s, resp["status"].GetString(), resp["status"].GetStringLength());
                                 //itoa(status, s, 10);
-								         status = atoi(s);
+								status = atoi(s);
                             }
                             else if (resp.HasMember("status") && resp["status"].IsInt()) {
                                 status = resp["status"].GetInt();
                             }
-                            mVHRoomDelegate->OnRecvAuditInavPublishMsg(String2WString(third_party_user_id), (AuditPublish)status);
+                            mpVHRoomMonitor->OnRecvAuditInavPublishMsg(String2WString(third_party_user_id), (AuditPublish)status);
                         }
                         else if (inav_event.compare("askfor_inav_publish") == 0) {
                             std::string third_party_user_id;
                             if (resp.HasMember("third_party_user_id") && resp["third_party_user_id"].IsString()) {
                                 third_party_user_id = resp["third_party_user_id"].GetString();
                             }
-                            mVHRoomDelegate->OnRecvBaseAskforInavPublishMsg(String2WString(third_party_user_id));
+                            mpVHRoomMonitor->OnRecvAskforInavPublishMsg(String2WString(third_party_user_id));
                         }
                         else if (inav_event.compare("kick_inav_stream") == 0) {
                             std::string third_party_user_id;
                             if (resp.HasMember("third_party_user_id") && resp["third_party_user_id"].IsString()) {
                                 third_party_user_id = resp["third_party_user_id"].GetString();
                             }
-                            mVHRoomDelegate->OnRecvKickInavStreamMsg(String2WString(third_party_user_id));
+                            mpVHRoomMonitor->OnRecvKickInavStreamMsg(String2WString(third_party_user_id));
                         }
                         else if (inav_event.compare("kick_inav") == 0) {
                             std::string third_party_user_id;
                             if (resp.HasMember("third_party_user_id") && resp["third_party_user_id"].IsString()) {
                                 third_party_user_id = resp["third_party_user_id"].GetString();
                             }
-                            mVHRoomDelegate->OnRecvKickInavMsg(String2WString(third_party_user_id));
+                            mpVHRoomMonitor->OnRecvKickInavMsg(String2WString(third_party_user_id));
                         }
                         else if (inav_event.compare("user_publish_callback") == 0) {
                             std::string third_party_user_id;
@@ -1928,10 +1447,10 @@ void VHPaasRoomImpl::ParamRecvInavMsg(const std::string data) {
                             else if (resp.HasMember("status") && resp["status"].IsInt()) {
                                 status = resp["status"].GetInt();
                             }
-                            mVHRoomDelegate->OnUserPublishCallback(String2WString(third_party_user_id), stream_id, (PushStreamEvent)status);
+                            mpVHRoomMonitor->OnUserPublishCallback(String2WString(third_party_user_id), stream_id, (PushStreamEvent)status);
                         }
                         else if (inav_event.compare("inav_close") == 0) {
-                            mVHRoomDelegate->OnRecvInavCloseMsg();
+                            mpVHRoomMonitor->OnRecvInavCloseMsg();
                         }
                     }
                 }
@@ -2017,17 +1536,20 @@ std::string VHPaasRoomImpl::GetSetLayOut(std::string layoutMode,std::string cust
     LOGD("urld:%s", url.c_str());
     return url;
 }
-
-std::string VHPaasRoomImpl::GetPublishInavAnotherWithParam(const std::string& live_room_id, int start) {
-    std::string baseInfo = GetBaseUrlInfo();
-    std::string layouyt = GetLayoutDesc(mCurrentBroadCastInfo.layoutMode);
-    std::string dip = mCurrentBroadCastInfo.dpiDesc;
-    std::string stream_id = mCurrentBroadCastInfo.stream_id;
-    std::string url = mDomain + std::string("/inav/publish-inav-another?") + baseInfo + string("&inav_id=") + mInavRoomId +
-        string("&room_id=") + live_room_id + string("&type=") + to_string(start);
-    LOGD("urld:%s", url.c_str());
-    return url;
-}
+//
+//std::string VHPaasRoomImpl::GetPublishInavAnotherWithParam(const std::string& live_room_id, int start) {
+//    std::string baseInfo = GetBaseUrlInfo();
+//    std::string layouyt = GetLayoutDesc(mCurrentBroadCastInfo.layoutMode);
+//    std::string dip = mCurrentBroadCastInfo.dpiDesc;
+//    std::string stream_id = mCurrentBroadCastInfo.stream_id;
+//    std::string url = mDomain + std::string("/inav/publish-inav-another?") + baseInfo + string("&inav_id=") + mInavRoomId +
+//        string("&room_id=") + live_room_id + string("&type=") + to_string(start) + string("&dpi=") + dip + 
+//        string("&frame_rate=") + to_string(mCurrentBroadCastInfo.fps) + string("&bitrate=") + 
+//        to_string(mCurrentBroadCastInfo.bitrate) + string("&layout=") + 
+//        layouyt + string("&max_screen_stream=") + stream_id;
+//    LOGD("urld:%s", url.c_str());
+//    return url;
+//}
 
 std::string VHPaasRoomImpl::GetPushAnotherConfig(int state) {
     std::string baseInfo = GetBaseUrlInfo();
@@ -2103,45 +1625,52 @@ std::string  VHPaasRoomImpl::GetLayoutDesc(LayoutMode layout) {
     return std::string();
 }
 
-//void VHPaasRoomImpl::SetBroadCastCallBack(const std::string result, const std::string& msg) {
-//    LOGD("msg:%s", msg.c_str());
-//    if (result.compare("success") == 0) {
-//        if (mbIsRuning && mVHRoomDelegate) {
-//            LOGD("msg:%s", msg.c_str());
-//            mVHRoomDelegate->OnSuccessedEvent(RoomEvent_Start_PublishInavAnother);
-//        }
-//        //api状态上报
-//        HTTP_GET_REQUEST httpGet(GetPublishInavAnother(mCurrentBroadCastInfo.live_room_id,1), "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName);
-//        if (mpHttpManagerInterface) {
-//            mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
-//                LOGD("data:%s", data.c_str());
-//            });
-//        }
-//    }
-//    else {
-//        if (mbIsRuning && mVHRoomDelegate) {
-//            LOGD("msg:%s", msg.c_str());
-//            mVHRoomDelegate->OnFailedEvent(RoomEvent_Start_PublishInavAnother, -1, msg);
-//        }
-//    }
-//}
-//
-//void VHPaasRoomImpl::SetBroadCastCallBackWithParam(const std::string result,const std::string& msg) {
-//    //如果设置布局成功
-//    if (result.compare("success") == 0) {
-//        if (mbIsRuning && mVHRoomDelegate) {
-//            LOGD("msg:%s", msg.c_str());
-//            mVHRoomDelegate->OnSuccessedEvent(RoomEvent_Start_PublishInavAnother, result);
-//        }
-//    }
-//    else {
-//        if (mbIsRuning && mVHRoomDelegate) {
-//            LOGD("msg:%s", msg.c_str());
-//            mVHRoomDelegate->OnFailedEvent(RoomEvent_Start_PublishInavAnother, -1, msg);
-//        }
-//    }
-//}
-//
+void VHPaasRoomImpl::SetBroadCastCallBack(const std::string result, const std::string& msg) {
+    LOGD("msg:%s", msg.c_str());
+    if (result.compare("success") == 0) {
+        if (mbIsRuning && mpVHRoomMonitor) {
+            LOGD("msg:%s", msg.c_str());
+            mpVHRoomMonitor->OnSuccessedEvent(RoomEvent_Start_PublishInavAnother);
+        }
+        //api状态上报
+        HTTP_GET_REQUEST httpGet(GetPublishInavAnother(mCurrentBroadCastInfo.live_room_id,1));
+        if (mpHttpManagerInterface) {
+            mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
+                LOGD("data:%s", data.c_str());
+            });
+        }
+    }
+    else {
+        if (mbIsRuning && mpVHRoomMonitor) {
+            LOGD("msg:%s", msg.c_str());
+            mpVHRoomMonitor->OnFailedEvent(RoomEvent_Start_PublishInavAnother, -1, msg);
+        }
+    }
+}
+
+void VHPaasRoomImpl::SetBroadCastCallBackWithParam(const std::string result,const std::string& msg) {
+    //如果设置布局成功
+    if (result.compare("success") == 0) {
+        if (mbIsRuning && mpVHRoomMonitor) {
+            LOGD("msg:%s", msg.c_str());
+            mpVHRoomMonitor->OnSuccessedEvent(RoomEvent_Start_PublishInavAnother, result);
+        }
+    }
+    else {
+        if (mbIsRuning && mpVHRoomMonitor) {
+            LOGD("msg:%s", msg.c_str());
+            mpVHRoomMonitor->OnFailedEvent(RoomEvent_Start_PublishInavAnother, -1, msg);
+            //api状态上报
+            HTTP_GET_REQUEST httpGet(GetPushAnotherConfig(2));
+            if (mpHttpManagerInterface) {
+                mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
+                    LOGD("data:%s", data.c_str());
+                });
+            }
+        }
+    }
+}
+
 bool VHPaasRoomImpl::IsVHMediaConnected() {
     LOGD("IsVHMediaConnected");
     bool bRet = false;
@@ -2150,52 +1679,6 @@ bool VHPaasRoomImpl::IsVHMediaConnected() {
     }
     return bRet;
 }
-
-void VHPaasRoomImpl::GetCurrentCameraInfo(int &index, std::string& devId) {
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->GetCurrentPlayOut(index, devId);
-      LOGD("enter index:%d", index);
-   }
-}
-
-/**
-* 摄像头画面预览，当预览结束之后需要停止预览，否则摄像头将被一直占用
-*   回调监听：RtcSDKEventDelegate
-*/
-int VHPaasRoomImpl::PreviewCamera(void* wnd, const std::string& devGuid, VideoProfileIndex index, int micIndex /*= -1*/) {
-   LOGD("IsVHMediaConnected");
-   int bRet = 0;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->PreviewCamera(wnd, devGuid, index, micIndex);
-   }
-   return bRet;
-}
-
-int VHPaasRoomImpl::GetMicVolumValue()
-{
-   int nRet = 0;
-   if (mpWebRtcSDKInterface) {
-      nRet = mpWebRtcSDKInterface->GetMicVolumValue();
-   }
-   return nRet;
-}
-
-void VHPaasRoomImpl::ChangePreViewMic(int micIndex)
-{
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->ChangePreViewMic(micIndex);
-   }
-}
-
-int VHPaasRoomImpl::StopPreviewCamera() {
-   LOGD("IsVHMediaConnected");
-   int bRet = 0;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->StopPreviewCamera();
-   }
-   return bRet;
-}
-
 /*  开始摄像头\麦克风采集
 *   回调检测 OnStartLocalCapture OnCameraCaptureErr  OnLocalMicOpenErr
 */
@@ -2206,17 +1689,6 @@ int VHPaasRoomImpl::StartLocalCapture(const std::string devId,VideoProfileIndex 
         nRet = mpWebRtcSDKInterface->StartLocalCapture(devId,index, doublePush);
     }
     return nRet;
-}
-
-int VHPaasRoomImpl::StartLocalAuxiliaryCapture(const std::string devId, VideoProfileIndex index)
-{
-   LOGD("%s %d", __FUNCTION__, index);
-   int nRet = false;
-   if (mpWebRtcSDKInterface) {
-      nRet = mpWebRtcSDKInterface->StartLocalAuxiliaryCapture(devId, index);
-   }
-   LOGD("StartLocalAuxiliaryCapture :%d", nRet);
-   return nRet;
 }
 
 int VHPaasRoomImpl::StartLocalCapturePicture(const std::string filePath, VideoProfileIndex index, bool doublePush/* = false*/) {
@@ -2232,7 +1704,7 @@ int VHPaasRoomImpl::StartLocalCapturePlayer(const int dev_index, const std::wstr
     LOGD("StartLocalCapturePlayer");
     int nRet = false;
     if (mpWebRtcSDKInterface) {
-        nRet = mpWebRtcSDKInterface->StartLocalCapturePlayer(dev_index, dev_id, volume);
+        nRet = mpWebRtcSDKInterface->StartLocalCapturePlayer(dev_id, volume);
     }
     return nRet;
 }
@@ -2259,16 +1731,6 @@ void VHPaasRoomImpl::StopLocalCapture() {
     //return bRet;
 }
 
-void VHPaasRoomImpl::StopLocalAuxiliaryCapture()
-{
-   LOGD("StopLocalAuxiliaryCapture");
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->StopLocalAuxiliaryCapture();
-   }
-   LOGD("StopLocalAuxiliaryCapture end");
-   return;
-}
-
 /*开始摄像头数据推流  回调检测：OnStartPushLocalStream*/
 int VHPaasRoomImpl::StartPushLocalStream() {
     LOGD("enter");
@@ -2277,24 +1739,13 @@ int VHPaasRoomImpl::StartPushLocalStream() {
         return VhallLive_ROOM_DISCONNECT;
     }
     //推流之前判断自己是否拥有权限。
-    HTTP_GET_REQUEST httpGet(GetAccessTokenPermission()/*, "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetAccessTokenPermission());
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
-            CheckPermission(VHStreamType_AVCapture, data, code, "");
+            CheckPermission(VHStreamType_AVCapture, data, code);
         });
     }
     return VhallLive_OK;
-}
-
-int VHPaasRoomImpl::StartPushLocalAuxiliaryStream(std::string context)
-{
-   LOGD("enter");
-   int bRet = VhallLiveErrCode::VhallLive_ERROR;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->StartPushLocalAuxiliaryStream(context);
-   }
-   LOGD("end");
-   return bRet;
 }
 
 /*停止摄像头数据推流 回调检测：OnStopPushLocalStream*/
@@ -2305,17 +1756,6 @@ int VHPaasRoomImpl::StopPushLocalStream() {
         bRet = mpWebRtcSDKInterface->StopPushLocalStream();
     }
     return bRet;
-}
-
-int VHPaasRoomImpl::StopPushLocalAuxiliaryStream()
-{
-   LOGD("enter");
-   int bRet = VhallLiveErrCode::VhallLive_ERROR;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->StopPushLocalAuxiliaryStream();
-   }
-   LOGD("end");
-   return bRet;
 }
 
 bool VHPaasRoomImpl::IsPushingStream(VHStreamType streamType) {
@@ -2336,150 +1776,46 @@ bool VHPaasRoomImpl::IsCapturingStream(VHStreamType streamType) {
     return bRet;
 }
 
-///**
-//*   当前互动房间是否存在桌面共享视频流
-//*/
-//bool VHPaasRoomImpl::IsUserPushingDesktopStream() {
-//    LOGD("enter");
-//    bool bRet = false;
-//    if (mpWebRtcSDKInterface) {
-//        bRet = mpWebRtcSDKInterface->IsPushingStream(VHStreamType_Desktop);
-//    }
-//    return bRet;
-//}
-///**
-//*   当前互动房间是否存在插播视频流
-//*/
-//bool VHPaasRoomImpl::IsUserPushingMediaFileStream() {
-//    LOGD("enter");
-//    bool bRet = false;
-//    if (mpWebRtcSDKInterface) {
-//        bRet = mpWebRtcSDKInterface->IsPushingStream(VHStreamType_MediaFile);
-//    }
-//    return bRet;
-//}
-
-void VHPaasRoomImpl::SubScribeRemoteStream(const std::string &stream_id, int delayTimeOut) {
-   LOGD("enter");
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->SubScribeRemoteStream(stream_id, delayTimeOut);
-   }
-}
-
-bool VHPaasRoomImpl::ChangeSubScribeUserSimulCast(const std::wstring& user_id, vlive::VHStreamType streamType, VHSimulCastType type) {
-   LOGD("enter");
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->ChangeSubScribeUserSimulCast(user_id, streamType, type);
-   }
-   return bRet;
-}
-
-/**开始渲染媒体数据流*/
-bool VHPaasRoomImpl::StartRenderStream(void* wnd, vlive::VHStreamType streamType) {
-    LOGD("enter streamType:%d", streamType);
+/**
+*   当前互动房间是否存在桌面共享视频流
+*/
+bool VHPaasRoomImpl::IsUserPushingDesktopStream() {
+    LOGD("enter");
     bool bRet = false;
     if (mpWebRtcSDKInterface) {
-       bRet = mpWebRtcSDKInterface->StartRenderLocalStream(streamType, wnd);
+        bRet = mpWebRtcSDKInterface->IsPushingStream(VHStreamType_Desktop);
     }
-    LOGD("end");
+    return bRet;
+}
+/**
+*   当前互动房间是否存在插播视频流
+*/
+bool VHPaasRoomImpl::IsUserPushingMediaFileStream() {
+    LOGD("enter");
+    bool bRet = false;
+    if (mpWebRtcSDKInterface) {
+        bRet = mpWebRtcSDKInterface->IsPushingStream(VHStreamType_MediaFile);
+    }
     return bRet;
 }
 
-bool VHPaasRoomImpl::StartRenderLocalStream(vlive::VHStreamType streamType, void * wnd)
-{
-   LOGD("enter  streamType:%d", streamType);
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->StartRenderLocalStream(streamType, wnd);
-   }
-   return bRet;
-}
 
-std::string VHPaasRoomImpl::GetSubScribeStreamId(const std::wstring& user, vlive::VHStreamType streamType) {
-   LOGD("enter  streamType:%d", streamType);
-   if (mpWebRtcSDKInterface) {
-      return mpWebRtcSDKInterface->GetSubScribeStreamId(user, streamType);
-   }
-   return std::string();
-}
-
-bool VHPaasRoomImpl::IsExitSubScribeStream(const vlive::VHStreamType & streamType)
-{
-   LOGD("enter");
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->IsExitSubScribeStream(streamType);
-   }
-   return bRet;
-}
-
-bool VHPaasRoomImpl::IsExitSubScribeStream(const std::string & id, const vlive::VHStreamType & streamType)
-{
-   LOGD("enter");
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->IsExitSubScribeStream(id, streamType);
-   }
-   return bRet;
-}
-
-void VHPaasRoomImpl::GetStreams(std::list<std::string>& streams)
-{
-   LOGD("enter");
-  
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->GetStreams(streams);
-   }
-
-}
-
-void VHPaasRoomImpl::ClearSubScribeStream()
-{
-   LOGD("enter  streamType:%d");
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->ClearSubScribeStream();
-   }
-}
-
-bool VHPaasRoomImpl::StartRenderLocalStreamByInterface(vlive::VHStreamType streamType, std::shared_ptr<vhall::VideoRenderReceiveInterface> receive)
-{
-   LOGD("enter  streamType:%d", streamType/*, receive, receive*/);
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->StartRenderLocalStreamByInterface(streamType, receive);
-   }
-   return bRet;
-}
-
-bool VHPaasRoomImpl::IsStreamExit(std::string id)
-{
-   //LOGD("enter  streamType:%d", streamType/*, receive, receive*/);
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->IsStreamExit(id);
-   }
-   return bRet;
-}
-
-bool VHPaasRoomImpl::StartRenderSubscribeStream(const std::wstring& user, vlive::VHStreamType streamType, void* wnd) {
-   LOGD("enter user:%s streamType:%d", user.c_str(), streamType);
-   bool bRet = false;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->StartRenderRemoteStream(user, streamType, wnd);
-   }
-   LOGD("end");
-   return bRet;
-}
-
-std::vector<DesktopCaptureSource> VHPaasRoomImpl::GetDesktops(int streamType) {
-   LOGD("enter streamType:%d ", streamType);
-   std::vector<DesktopCaptureSource> sources;
-   if (mpWebRtcSDKInterface) {
-      sources = mpWebRtcSDKInterface->GetDesktops(streamType);
-      //sources = mpWebRtcSDKInterface->GetDesktops(streamType == ScreenCaptureSource_DeskTop ? VHStreamType_Desktop : VHStreamType_SoftWare);
-   }
-   return sources;
+/**开始渲染媒体数据流*/
+bool VHPaasRoomImpl::StartRenderStream(const std::wstring& user, void*  wnd, vlive::VHStreamType streamType) {
+    LOGD("enter user:%s streamType:%d", user.c_str(),streamType);
+    bool bRet = false;
+    if (mpWebRtcSDKInterface) {
+        if (WString2String(user) == (mThridUserId)) {
+            LOGD("local");
+            bRet = mpWebRtcSDKInterface->StartRenderLocalStream(streamType, wnd);
+        }
+        else {
+            LOGD("remote");
+            bRet = mpWebRtcSDKInterface->StartRenderRemoteStream(user, streamType, wnd);
+        }
+    }
+    LOGD("end");
+    return bRet;
 }
 
 /*开始桌面共享采集  回调检测：OnStartDesktopCaptureSuc OnStartDesktopCaptureErr*/
@@ -2500,18 +1836,81 @@ void VHPaasRoomImpl::StopDesktopCapture() {
     }
     //return VhallLive_NO_OBJ;
 }
+
+int VHPaasRoomImpl::SetDesktopEdgeEnhance(bool enable) {
+   LOGD("enter")
+   int nRet = 0;
+   if (mpWebRtcSDKInterface) {
+      nRet = mpWebRtcSDKInterface->SetDesktopEdgeEnhance(enable);
+   }
+   return nRet;
+}
+
+int VHPaasRoomImpl::StartPreviewCamera(void* wnd, const std::string& devGuid, VideoProfileIndex index, int micIndex) {
+   LOGD("enter");
+   int nRet = 0;
+   if (mpWebRtcSDKInterface) {
+      nRet = mpWebRtcSDKInterface->StartPreviewCamera(wnd, devGuid, index, micIndex);
+   }
+   return nRet;
+}
+
+int VHPaasRoomImpl::StartPreviewCamera(std::shared_ptr<vhall::VideoRenderReceiveInterface> recv, const std::string& devGuid, VideoProfileIndex index, int micIndex) {
+   LOGD("enter");
+   int nRet = 0;
+   if (mpWebRtcSDKInterface) {
+      nRet = mpWebRtcSDKInterface->StartPreviewCamera(recv, devGuid, index, micIndex);
+   }
+   return nRet;
+}
+int VHPaasRoomImpl::StopPreviewCamera() {
+   LOGD("enter");
+   int nRet = 0;
+   if (mpWebRtcSDKInterface) {
+      nRet = mpWebRtcSDKInterface->StopPreviewCamera();
+   }
+   return nRet;
+}
+
+bool VHPaasRoomImpl::IsSupprotBeauty() {
+   LOGD("enter");
+   bool nRet = 0;
+   if (mpWebRtcSDKInterface) {
+      nRet = mpWebRtcSDKInterface->IsSupprotBeauty();
+   }
+   return nRet;
+}
+
+int VHPaasRoomImpl::SetCameraBeautyLevel(int level) {
+   LOGD("enter");
+   int nRet = 0;
+   if (mpWebRtcSDKInterface) {
+      nRet = mpWebRtcSDKInterface->SetCameraBeautyLevel(level);
+   }
+   return nRet;
+}
+
+int VHPaasRoomImpl::SetPreviewCameraBeautyLevel(int level) {
+   LOGD("enter");
+   int nRet = 0;
+   if (mpWebRtcSDKInterface) {
+      nRet = mpWebRtcSDKInterface->SetPreviewCameraBeautyLevel(level);
+   }
+   return nRet;
+}
+
 /*开始桌面共享采集推流 回调检测：OnStartPushDesktopStream*/
-int VHPaasRoomImpl::StartPushDesktopStream(std::string context/* = ""*/) {
+int VHPaasRoomImpl::StartPushDesktopStream() {
     LOGD("enter");
     if (mpWebRtcSDKInterface && !mpWebRtcSDKInterface->IsWebRtcRoomConnected()) {
         LOGD("VhallLive_ROOM_DISCONNECT ");
         return VhallLive_ROOM_DISCONNECT;
     }
     //推流之前判断自己是否拥有权限。
-    HTTP_GET_REQUEST httpGet(GetAccessTokenPermission()/*, "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetAccessTokenPermission());
     if (mpHttpManagerInterface) {
-        mpHttpManagerInterface->HttpGetRequest(httpGet, [&, context](std::string data, int code, const std::string userData)->void {
-            CheckPermission(VHStreamType_Desktop, data, code, context);
+        mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
+            CheckPermission(VHStreamType_Desktop, data, code);
         });
     }
     return VhallLive_OK;
@@ -2527,98 +1926,19 @@ int VHPaasRoomImpl::StopPushDesktopStream() {
     return bRet;
 }
 
-/*
-* 设置选择的软件源
-*/
-int VHPaasRoomImpl::SelectSource(int64_t id){
-   LOGD("enter");
-   int bRet = VhallLive_ERROR;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->SelectSource(id);
-   }
-   return bRet;
-}
-/*
-* 停止软件源共享采集
-*/
-void VHPaasRoomImpl::StopSoftwareCapture(){
-   LOGD("enter");
-   int bRet = VhallLive_ERROR;
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->StopSoftwareCapture();
-   }
-   return;
-}
-/*
-* 停止软件共享采集推流
-*/
-int VHPaasRoomImpl::StopPushSoftWareStream(){
-   LOGD("enter");
-   int bRet = VhallLive_ERROR;
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->StopPushSoftWareStream();
-   }
-   return bRet;
-}
-/*
-* 开始软件共享采集推流
-*/
-int VHPaasRoomImpl::StartPushSoftWareStream(){
-   LOGD("enter");
-   int bRet = VhallLive_ERROR;
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->StartPushSoftWareStream();
-   }
-   return bRet;
-};
-
 /*开始插播文件*/
-int VHPaasRoomImpl::StartPlayMediaFile(std::string filePath, VideoProfileIndex profileIndex, long long seekPos) {
-    LOGD("enter file:%s", filePath.c_str());
+int VHPaasRoomImpl::InitMediaFile() {
     int bRet = VhallLive_ERROR;
     if (mpWebRtcSDKInterface) {
-        bRet = mpWebRtcSDKInterface->StartPlayMediaFile(filePath, profileIndex, seekPos);
+        bRet = mpWebRtcSDKInterface->InitMediaFile();
     }
     return bRet;
 }
 
-bool VHPaasRoomImpl::IsPlayFileHasVideo() {
+bool VHPaasRoomImpl::PlayFile(std::string file, VideoProfileIndex profileIndex) {
+   bool bRet = false;
    if (mpWebRtcSDKInterface) {
-      return  mpWebRtcSDKInterface->IsPlayFileHasVideo();
-   }
-   return false;
-}
-
-int VHPaasRoomImpl::MediaFileVolumeChange(int vol) {
-   LOGD("enter vol:%d", vol);
-   int bRet = VhallLive_ERROR;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->MediaFileVolumeChange(vol);
-   }
-   return bRet;
-}
-
-void VHPaasRoomImpl::ChangeMediaFileProfile(VideoProfileIndex profileIndex) {
-   LOGD("enter profileIndex:%d", profileIndex);
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->ChangeMediaFileProfile(profileIndex);
-   }
-}
-
-int VHPaasRoomImpl::CheckPicEffectiveness(const std::string filePath) {
-   LOGD("enter file:%s", filePath.c_str());
-   int bRet = VhallLive_ERROR;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->CheckPicEffectiveness(filePath);
-   }
-   return bRet;
-}
-
-int VHPaasRoomImpl::GetPlayMeidaFileWidthAndHeight(std::string filePath, int& srcWidth, int &srcHeight) {
-   LOGD("enter file:%s", filePath.c_str());
-   int bRet = VhallLive_ERROR;
-   if (mpWebRtcSDKInterface) {
-      bRet = mpWebRtcSDKInterface->GetPlayMeidaFileWidthAndHeight(filePath, srcWidth, srcHeight);
+      bRet = mpWebRtcSDKInterface->PlayFile(file,profileIndex);
    }
    return bRet;
 }
@@ -2637,9 +1957,8 @@ int VHPaasRoomImpl::StartPushMediaFileStream() {
         LOGD("VhallLive_ROOM_DISCONNECT ");
         return VhallLive_ROOM_DISCONNECT;
     }
-
     //推流之前判断自己是否拥有权限。
-    HTTP_GET_REQUEST httpGet(GetAccessTokenPermission()/*, "", bIsEnableProxy, mProxyAddr, mProxyPort, mProxyUserPwd, mProxyUserName*/);
+    HTTP_GET_REQUEST httpGet(GetAccessTokenPermission());
     if (mpHttpManagerInterface) {
         mpHttpManagerInterface->HttpGetRequest(httpGet, [&](std::string data, int code, const std::string userData)->void {
             CheckPermission(VHStreamType_MediaFile, data, code);
@@ -2723,35 +2042,6 @@ void VHPaasRoomImpl::GetCameraDevices(std::list<vhall::VideoDevProperty> &camera
         mpWebRtcSDKInterface->GetCameraDevices(cameras);
     }
 }
-
-/*
-*  是否存在音频或视频设备。
-*  返回值：只要存在一类设备 返回true, 如果音视频设备都没有则返回false
-**/
-bool VHPaasRoomImpl::HasVideoOrAudioDev() {
-   LOGD("enter ");
-   if (mpWebRtcSDKInterface) {
-      return mpWebRtcSDKInterface->HasVideoOrAudioDev();
-   }
-   return false;
-}
-
-bool VHPaasRoomImpl::HasVideoDev()
-{
-   if (mpWebRtcSDKInterface) {
-      return mpWebRtcSDKInterface->HasVideoDev();
-   }
-   return false;
-}
-
-bool VHPaasRoomImpl::HasAudioDev()
-{
-   if (mpWebRtcSDKInterface) {
-      return mpWebRtcSDKInterface->HasAudioDev();
-   }
-   return false;
-}
-
 /**获取麦克风列表**/
 void VHPaasRoomImpl::GetMicDevices(std::list<vhall::AudioDevProperty> &micDevList) {
     LOGD("enter ");
@@ -2759,18 +2049,6 @@ void VHPaasRoomImpl::GetMicDevices(std::list<vhall::AudioDevProperty> &micDevLis
         mpWebRtcSDKInterface->GetMicDevices(micDevList);
     }
 }
-
-/*
- *  获取摄像头列表详情
- */
-int VHPaasRoomImpl::GetCameraDevDetails(std::list<CameraDetailsInfo> &cameraDetails) {
-   LOGD("enter ");
-   if (mpWebRtcSDKInterface) {
-      mpWebRtcSDKInterface->GetCameraDevDetails(cameraDetails);
-   }
-   return 0;
-}
-
 /**获取扬声器列表**/
 void VHPaasRoomImpl::GetPlayerDevices(std::list<vhall::AudioDevProperty> &playerDevList) {
     LOGD("enter ");
@@ -2782,10 +2060,10 @@ void VHPaasRoomImpl::GetPlayerDevices(std::list<vhall::AudioDevProperty> &player
 *  设置使用的麦克风
 *  index: GetMicDevices获取的列表中 VhallLiveDeviceInfo中的 devIndex
 */
-void VHPaasRoomImpl::SetUseMicIndex(int index,std::string devId, std::wstring desktopCaptureId) {
+void VHPaasRoomImpl::SetUseMicIndex(int index,std::string devId) {
     LOGD("enter index:%d", index);
     if (mpWebRtcSDKInterface) {
-        mpWebRtcSDKInterface->SetUsedMic(index, devId, desktopCaptureId);
+        mpWebRtcSDKInterface->SetUsedMic(index, devId, L"");
     }
 }
 
@@ -2793,7 +2071,7 @@ void VHPaasRoomImpl::SetUseMicIndex(int index,std::string devId, std::wstring de
 *  设置使用的扬声器
 *  index: GetPlayerDevices获取的列表中 vhall::AudioDevProperty中的 devIndex
 */
-void VHPaasRoomImpl::SetUsePlayer(int index, std::string devId) {
+void VHPaasRoomImpl::SetUserPlayIndex(int index, std::string devId) {
     LOGD("enter index:%d", index);
     if (mpWebRtcSDKInterface) {
         mpWebRtcSDKInterface->SetUsedPlay(index, devId);
@@ -2968,7 +2246,7 @@ void VHPaasRoomImpl::UploadReportSDKLogin(std::string appid, std::string thrid_u
     std::string data = buffer.GetString();
     LOGD("OnSocketOpen  SendMsg:%s", data.c_str());
 
-    mpLogReport->SendLog(SDK_LOGIN, timeStamp, thrid_user_id, "1", data);
+    mLogReport.SendLog(SDK_LOGIN, timeStamp, thrid_user_id, "1", data);
 }
 
 void VHPaasRoomImpl::UploadReportSDKInit() {
@@ -3000,17 +2278,17 @@ void VHPaasRoomImpl::UploadReportSDKInit() {
     document.Accept(writer);
     std::string data = buffer.GetString();
     LOGD("OnSocketOpen  SendMsg:%s", data.c_str());
-    mpLogReport->SendLog(SDK_INIT, timeStamp, "defualt", "1", data);
+    mLogReport.SendLog(SDK_INIT, timeStamp, "defualt", "1", data);
 }
 
 namespace vlive {
-    VHPAASSDK_EXPORT VHPaasInteractionRoom* GetPaasSDKInstance() {
+    VHPAASSDK_EXPORT VLiveRoom* GetPaasSDKInstance() {
         std::unique_lock<std::mutex> lock(gSDKMutex);
         if (gPaasSDKInstance == nullptr) {
             gPaasSDKInstance = new VHPaasRoomImpl();
         }
 
-        return (VHPaasInteractionRoom*)gPaasSDKInstance;
+        return (VLiveRoom*)gPaasSDKInstance;
     }
 
     VHPAASSDK_EXPORT void DestoryPaasSDKInstance() {

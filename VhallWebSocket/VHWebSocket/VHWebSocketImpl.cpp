@@ -177,9 +177,9 @@ void VHWebSocketImpl::ParseWebsocketData(char* dataMsg, size_t srcLen) {
             if (docText.HasParseError()) {
                 return;
             }
-            if (VHWebSocketImpl::mpCallback) {
-               VHWebSocketImpl::mpCallback->OnRecvAllMsg(dstBuffer,strlen(dstBuffer));
-            }
+            //if (VHWebSocketImpl::mpCallback) {
+            //   VHWebSocketImpl::mpCallback->OnRecvAllMsg(dstBuffer,strlen(dstBuffer));
+            //}
             if (docText.IsObject()) {
                 if (docText.HasMember("service_type") && docText["service_type"].IsString()) {
                     std::string service_type = docText["service_type"].GetString();
@@ -191,7 +191,6 @@ void VHWebSocketImpl::ParseWebsocketData(char* dataMsg, size_t srcLen) {
                             std::string third_party_user_id = docText["sender_id"].GetString();
                             id = String2WString(third_party_user_id);
                         }
-
                         if (docText.HasMember("data") && docText["data"].IsString()) {
                             std::string data = docText["data"].GetString();
                             rapidjson::Document dataDoc;
@@ -201,7 +200,9 @@ void VHWebSocketImpl::ParseWebsocketData(char* dataMsg, size_t srcLen) {
                             }
                             if (dataDoc.HasMember("type") && dataDoc["type"].IsString()) {
                                 std::string type = dataDoc["type"].GetString();
-                                if (type == "Leave" || type == "Join") {
+                                //// 聊天上报，只处理上线下、禁言、全员禁言，取消禁言，取消全员禁言
+                                /// 如果应用层不适用嵌入，使用原生聊天，那么需要上报所有聊天消息。
+                                if (type == "Leave" || type == "Join" || type == "disable" || type == "disable_all" || type == "permit" || type == "permit_all") {
                                     if (docText.HasMember("context") && docText["context"].IsString()) {
                                         std::string datacontextMsg = docText["context"].GetString();
                                         rapidjson::Document datacontextObj;
@@ -249,7 +250,7 @@ void VHWebSocketImpl::ParseWebsocketData(char* dataMsg, size_t srcLen) {
                                         }
 
                                         if (VHWebSocketImpl::mpCallback) {
-                                            VHWebSocketImpl::mpCallback->OnServiceMsg(type, id, userName, role_name, is_banned, devType, uv);
+                                            VHWebSocketImpl::mpCallback->OnRecvChatCtrlMsg(type.c_str(), dstBuffer);
                                         }
                                     }
                                 }
@@ -512,7 +513,7 @@ void VHWebSocketImpl::ProcessTask() {
 
     while (bThreadRun) {
         if (gTaskEvent) {
-            //DWORD ret = WaitForSingleObject(gTaskEvent, 1000);
+            DWORD ret = WaitForSingleObject(gTaskEvent, 1000);
             unsigned int rl_mirror = 0;
             if (!wsi_mirror && ratelimit_connects(&rl_mirror, 2u)) {
                 lwsl_notice("mirror: connecting\n");

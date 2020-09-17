@@ -15,7 +15,7 @@ public:
     virtual void OnClose() = 0;
     virtual void OnSocketOpen(std::string const& nsp) = 0;
     virtual void OnSocketClose(std::string const& nsp) = 0;
-	 virtual void OnServiceMsg(std::string type, const std::wstring user_id, const std::wstring nickname, const std::string rolename, bool is_banned, int devType = -1, int uv = 0) = 0;
+	 virtual void OnRecvChatCtrlMsg(const char* type, const char* msg) = 0;
     virtual void OnRecvAllMsg(const char* ,int length) = 0;
 };
 

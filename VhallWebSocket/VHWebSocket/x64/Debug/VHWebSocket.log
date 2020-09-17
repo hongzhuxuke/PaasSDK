@@ -1,72 +1,62 @@
-﻿  stdafx.cpp
-  dllmain.cpp
-  message_wrapper.cpp
-e:\workspace\classclient\classsdk\paassdk\vhallwebsocket\socket_io\socket.io-client-cpp\lib\websocketpp\websocketpp\frame.hpp(834): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
-e:\workspace\classclient\classsdk\paassdk\vhallwebsocket\socket_io\socket.io-client-cpp\lib\websocketpp\websocketpp\common\md5.hpp(367): warning C4267: “+=”: 从“size_t”转换到“websocketpp::md5::md5_word_t”，可能丢失数据
-e:\workspace\classclient\classsdk\paassdk\vhallwebsocket\socket_io\socket.io-client-cpp\lib\websocketpp\websocketpp\sha1\sha1.hpp(176): warning C4267: “=”: 从“size_t”转换到“unsigned int”，可能丢失数据
-  VHWebSocket.cpp
-  VHWebSocketImpl.cpp
-e:\workspace\classclient\classsdk\paassdk\vhallwebsocket\vhwebsocket\vhwebsocketimpl.cpp(181): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-  正在生成代码...
-    正在创建库 E:\workSpace\classClient\x64\Debug\VHWebSocket.lib 和对象 E:\workSpace\classClient\x64\Debug\VHWebSocket.exp
-websockets_static.lib(alloc.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(alloc.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(buflist.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(buflist.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(context.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(context.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(lws_dll2.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(lws_dll2.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(libwebsockets.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(libwebsockets.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(logs.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(logs.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(system.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(system.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(base64-decode.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(base64-decode.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(vfs.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(vfs.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(dummy-callback.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(dummy-callback.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(output.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(output.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(close.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(close.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(network.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(network.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(vhost.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(vhost.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(pollfd.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(pollfd.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(service.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(service.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(sorted-usec-list.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(sorted-usec-list.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(state.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(state.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(wsi.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(wsi.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(wsi-timeout.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(wsi-timeout.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(adopt.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(adopt.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(ops-pipe.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-pipe.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(sequencer.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(sequencer.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(header.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(header.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(parsers.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(parsers.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(ops-h1.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-h1.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(ops-ws.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-ws.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(client-ws.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client-ws.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(client-parser-ws.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client-parser-ws.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(server-ws.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(server-ws.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(ops-raw-skt.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-raw-skt.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(ops-raw-file.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-raw-file.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(connect.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(connect.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(client.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(client-http.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client-http.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(client-handshake.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client-handshake.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(ops-listen.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-listen.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(tls.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(tls.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(tls-network.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(tls-network.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(openssl-tls.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-tls.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(openssl-x509.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-x509.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(openssl-ssl.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-ssl.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(tls-server.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(tls-server.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(openssl-server.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-server.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(tls-client.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(tls-client.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(openssl-client.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-client.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(sha-1.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(sha-1.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(http2.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(http2.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(hpack.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(hpack.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(ops-h2.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-h2.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(windows-fds.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-fds.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(windows-file.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-file.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(windows-init.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-init.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(windows-misc.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-misc.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(windows-pipe.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-pipe.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(windows-service.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-service.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(windows-sockets.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-sockets.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(poll.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(poll.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(gettimeofday.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(gettimeofday.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-websockets_static.lib(server.c.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(server.c.obj)”或在“E:\workSpace\classClient\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-  VHWebSocket.vcxproj -> E:\workSpace\classClient\x64\Debug\VHWebSocket.dll
+﻿    正在创建库 D:\workspace\vhall_vls\x64\Debug\VHWebSocket.lib 和对象 D:\workspace\vhall_vls\x64\Debug\VHWebSocket.exp
+websockets_static.lib(alloc.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(alloc.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(buflist.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(buflist.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(context.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(context.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(lws_dll2.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(lws_dll2.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(libwebsockets.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(libwebsockets.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(logs.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(logs.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(system.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(system.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(base64-decode.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(base64-decode.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(vfs.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(vfs.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(dummy-callback.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(dummy-callback.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(output.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(output.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(close.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(close.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(network.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(network.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(vhost.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(vhost.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(pollfd.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(pollfd.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(service.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(service.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(sorted-usec-list.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(sorted-usec-list.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(state.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(state.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(wsi.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(wsi.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(wsi-timeout.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(wsi-timeout.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(adopt.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(adopt.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(ops-pipe.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-pipe.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(sequencer.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(sequencer.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(header.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(header.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(parsers.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(parsers.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(ops-h1.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-h1.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(ops-ws.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-ws.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(client-ws.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client-ws.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(client-parser-ws.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client-parser-ws.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(server-ws.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(server-ws.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(ops-raw-skt.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-raw-skt.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(ops-raw-file.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-raw-file.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(connect.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(connect.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(client.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(client-http.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client-http.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(client-handshake.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(client-handshake.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(ops-listen.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-listen.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(tls.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(tls.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(tls-network.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(tls-network.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(openssl-tls.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-tls.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(openssl-x509.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-x509.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(openssl-ssl.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-ssl.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(tls-server.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(tls-server.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(openssl-server.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-server.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(tls-client.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(tls-client.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(openssl-client.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(openssl-client.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(sha-1.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(sha-1.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(http2.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(http2.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(hpack.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(hpack.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(ops-h2.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(ops-h2.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(windows-fds.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-fds.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(windows-file.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-file.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(windows-init.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-init.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(windows-misc.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-misc.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(windows-pipe.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-pipe.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(windows-service.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-service.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(windows-sockets.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(windows-sockets.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(poll.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(poll.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(gettimeofday.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(gettimeofday.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+websockets_static.lib(server.c.obj) : warning LNK4099: 未找到 PDB“websockets.pdb”(使用“websockets_static.lib(server.c.obj)”或在“D:\workspace\vhall_vls\x64\Debug\websockets.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+  VHWebSocket.vcxproj -> D:\workspace\vhall_vls\x64\Debug\VHWebSocket.dll
